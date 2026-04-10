@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TD Bank — Internal Policy Assistant</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --td-green: #008C45;
+    --td-green-dark: #006633;
+    --td-green-light: #e6f5ed;
+    --td-green-mid: #b3ddc7;
+    --td-green-faint: #f2faf6;
+    --white: #ffffff;
+    --off-white: #f8fafb;
+    --border: #d0e8da;
+    --border-dark: #a8ceb9;
+    --text-main: #1a2e22;
+    --text-muted: #5a7a68;
+    --text-label: #2e6e4a;
+    --row-even: #ffffff;
+    --row-odd: #f4faf7;
+    --staff-color: #007a3d;
+    --system-color: #1a4a2e;
+    --warn-color: #b85c00;
+    --warn-bg: #fff8f0;
+    --row-hover: #e8f5ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--td-green-dark);
+    color: #fff;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 3px solid var(--td-green);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  /* TD Logo SVG */
+  .td-logo {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .header-title .main-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #fff;
+  }
+
+  .header-title .sub-title {
+    font-size: 10.5px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.65);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+
+
+  /* ── LOG TABLE HEADER ── */
+  .log-header {
+    background: var(--td-green-dark);
+    display: grid;
+    grid-template-columns: 90px 70px 1fr;
+    padding: 0 24px;
+    height: 28px;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 0;
+  }
+
+  .log-col-header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.6);
+    border-right: 1px solid rgba(255,255,255,0.12);
+    padding-right: 12px;
+  }
+
+  .log-col-header:last-child { border-right: none; padding-left: 12px; }
+
+  /* ── LOG AREA ── */
+  #log-area {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+  }
+
+  #log-area::-webkit-scrollbar { width: 6px; }
+  #log-area::-webkit-scrollbar-track { background: var(--off-white); }
+  #log-area::-webkit-scrollbar-thumb { background: var(--td-green-mid); border-radius: 3px; }
+
+  .log-row {
+    display: grid;
+    grid-template-columns: 90px 70px 1fr;
+    padding: 10px 24px;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    align-items: start;
+  }
+
+  .log-row:nth-child(even) { background: var(--row-odd); }
+  .log-row:nth-child(odd) { background: var(--row-even); }
+  .log-row:hover { background: var(--row-hover); }
+
+  .log-row.is-system:nth-child(even) { background: var(--td-green-faint); }
+  .log-row.is-system:nth-child(odd) { background: #f9fdf9; }
+  .log-row.is-system:hover { background: var(--td-green-light); }
+
+  .log-row.is-warn { background: var(--warn-bg) !important; }
+  .log-row.is-warn:hover { background: #ffe8d0 !important; }
+
+  .log-cell {
+    padding-right: 12px;
+    border-right: 1px solid var(--border);
+  }
+
+  .log-cell:last-child {
+    border-right: none;
+    padding-right: 0;
+    padding-left: 12px;
+  }
+
+  .log-timestamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    padding-top: 1px;
+  }
+
+  .log-source {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 5px;
+    border-radius: 2px;
+  }
+
+  .source-staff {
+    background: #d4eddf;
+    color: var(--staff-color);
+    border: 1px solid #a8d5ba;
+  }
+
+  .source-system {
+    background: var(--td-green);
+    color: #fff;
+  }
+
+  .source-warn {
+    background: #f5a623;
+    color: #fff;
+  }
+
+  .log-message {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-main);
+    padding-top: 1px;
+  }
+
+  .log-message.system-msg {
+    color: var(--system-color);
+  }
+
+  .log-message.warn-msg {
+    color: var(--warn-color);
+    font-weight: 500;
+  }
+
+  .log-message strong {
+    color: var(--td-green-dark);
+    font-weight: 600;
+  }
+
+  .log-message ul {
+    margin: 4px 0 4px 18px;
+    font-size: 12.5px;
+  }
+
+  .log-message li { margin-bottom: 2px; }
+
+  .policy-ref {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    background: var(--td-green-light);
+    color: var(--td-green-dark);
+    border: 1px solid var(--td-green-mid);
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-right: 4px;
+    margin-top: 3px;
+  }
+
+  /* ── WELCOME BANNER ── */
+  .welcome-row {
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--td-green-dark) 0%, var(--td-green) 100%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .welcome-text .wt-main {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .welcome-text .wt-sub {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* ── INPUT AREA ── */
+  .input-area {
+    background: var(--white);
+    border-top: 2px solid var(--td-green);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .input-prompt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--td-green-dark);
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #query-input {
+    flex: 1;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    border: 1px solid var(--border-dark);
+    border-radius: 2px;
+    padding: 8px 12px;
+    outline: none;
+    color: var(--text-main);
+    background: var(--td-green-faint);
+    transition: border 0.15s, background 0.15s;
+  }
+
+  #query-input:focus {
+    border-color: var(--td-green);
+    background: #fff;
+  }
+
+  #query-input::placeholder {
+    color: #9ab8a8;
+    font-style: italic;
+  }
+
+  #send-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 8px 18px;
+    background: var(--td-green-dark);
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  #send-btn:hover { background: var(--td-green); }
+  #send-btn:active { background: #004d22; }
+
+  .input-hint {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── TYPING INDICATOR ── */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 0;
+  }
+
+  .typing-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--td-green);
+    border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--td-green-dark);
+    padding: 5px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  footer span {
+    font-size: 9.5px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <!-- TD Bank Logo SVG -->
+    <svg class="td-logo" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+      <rect width="44" height="44" rx="4" fill="#008C45"/>
+      <rect x="1.5" y="1.5" width="41" height="41" rx="3" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>
+      <!-- TD Shield -->
+      <path d="M22 7 L34 12 L34 24 C34 31 28 37 22 39 C16 37 10 31 10 24 L10 12 Z" fill="#006633"/>
+      <path d="M22 9 L33 14 L33 24 C33 30.5 27.5 36 22 38 C16.5 36 11 30.5 11 24 L11 14 Z" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+      <!-- T -->
+      <rect x="14" y="15" width="10" height="2.5" rx="0.5" fill="white"/>
+      <rect x="18.5" y="15" width="2.5" height="10" rx="0.5" fill="white"/>
+      <!-- D -->
+      <rect x="25" y="15" width="2.5" height="12.5" rx="0.5" fill="white"/>
+      <path d="M27 15 L29.5 15.5 C31.5 16.5 32 21.5 29.5 26.5 L27 27.5 Z" fill="white"/>
+    </svg>
+    <div class="header-title">
+      <span class="main-title">TD Bank — Policy Assistant</span>
+      <span class="sub-title">Internal Staff Resource · Confidential</span>
+    </div>
+  </div>
+
+</header>
+
+<!-- LOG COLUMN HEADERS -->
+<div class="log-header">
+  <div class="log-col-header">Timestamp</div>
+  <div class="log-col-header">Source</div>
+  <div class="log-col-header" style="padding-left:12px;padding-right:0">Message</div>
+</div>
+
+<!-- LOG AREA -->
+<div id="log-area">
+  <!-- Welcome banner -->
+  <div class="welcome-row">
+    <div class="welcome-text">
+      <div class="wt-main">Welcome to the TD Bank Internal Policy Assistant</div>
+      <div class="wt-sub">This tool provides guidance on TD Bank's published internal policies and governance documents. For complex matters, always verify with your supervisor or the relevant policy document directly. All responses are for internal staff reference only.</div>
+    </div>
+  </div>
+</div>
+
+<!-- INPUT AREA -->
+<div class="input-area">
+  <span class="input-prompt">STAFF&gt;</span>
+  <input type="text" id="query-input" placeholder="Ask about any TD Bank policy, procedure or guideline…" autocomplete="off" />
+  <button id="send-btn" onclick="sendQuery()">SUBMIT</button>
+  <span class="input-hint">Press Enter ↵</span>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>TD BANK GROUP · INTERNAL USE ONLY · NOT FOR DISTRIBUTION</span>
+  <span>Source: td.com/ca/en/about-td/for-investors/policies-and-references</span>
+</footer>
+
+<script>
+// ══════════════════════════════════════════════════════
+// TD BANK POLICY KNOWLEDGE BASE — SOURCED DIRECTLY FROM TD PDFs & PAGES
+// Sources: Code of Conduct & Ethics (Jan 2026 PDF), AML/ATF Statement (Mar 2026),
+//   Anti-Corruption Statement (Mar 2026), Respectful Workplace Summary (Mar 2026),
+//   Health & Safety Summary (Sep 2025), Mental Health Approach (Mar 2026),
+//   Benefits Summary (Mar 2026), Fair Pay Approach (Mar 2026),
+//   Job Transitions, Modern Slavery Report (Feb 2026),
+//   Privacy Policy, Online Security — all td.com official documents
+// ══════════════════════════════════════════════════════
+const POLICY_KB = [
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 1. CODE OF CONDUCT AND ETHICS
+  // Source: Code of Conduct and Ethics for Employees and Directors (Jan 2026 PDF)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['code of conduct','conduct','ethics','code','ethical','integrity','conflict of interest','conflicts','gifts','entertainment','travel','personal trading','confidentiality','insider trading','tipping','reporting violations','non-retaliation','retaliation','attestation','irregular business','kiting','market abuse','tied selling','forgery','falsifying','commission sharing','outside business','alcohol','substance use','appearance','courtesy','dress code','criminal charges','corporate opportunities','bequests','political activity','charitable','antitrust','competition law','short selling','sanctions violations','waivers','annual attestation','corporate credit card','expense policy','cash advance','reasonable expenses','protecting assets','intellectual property','computer security','ai use'],
+    policy: 'Code of Conduct and Ethics',
+    answer: `TD Bank's <strong>Code of Conduct and Ethics</strong> (January 2026, approved by the Corporate Governance Committee on December 2, 2025) applies to all employees and directors globally, including remote workers. Every employee and director must complete annual training and attest to compliance. TD has over 100,000 colleagues and 28 million clients.
+
+      <strong>Core Standard:</strong> Every employee must assess every business decision against whether it is legal, fair, and within TD's risk appetite. This applies from major Board decisions to day-to-day transactions.
+
+      <strong>1. Respecting the Law:</strong> Employees must comply with all laws, rules and regulations in every jurisdiction. You must not knowingly assist clients or other employees to violate the Code, TD policies, or the law. If you have any doubt, escalate immediately to your manager, HR, Legal, FCRM, or Compliance.
+
+      <strong>2. Demonstrating Personal Integrity:</strong>
+      <ul>
+        <li><strong>Criminal Charges:</strong> You must inform your manager or HR as soon as possible if charged with or found guilty of a criminal offence, or if subject to an adverse regulatory finding. Failure to disclose may have employment consequences.</li>
+        <li><strong>Gifts, Travel &amp; Entertainment:</strong> Cash and cash equivalents (gift cards, stored value cards, gift vouchers) of any value are strictly prohibited at all times. Other gifts/entertainment must be legally permitted and reasonable. You must never solicit gifts. Employees below SVP must get manager approval before accepting out-of-town invitations from clients. Employees at SVP or above must get approval from the General Counsel or Enterprise Head of HR.</li>
+        <li><strong>Alcohol &amp; Substance Use:</strong> Do not consume alcohol or substances that affect work performance. Consumption at TD locations requires SVP or Head of HR approval. You must never serve alcohol to minors or impaired individuals, and must take reasonable steps to prevent impaired driving.</li>
+        <li><strong>Human Rights &amp; Respectful Workplace:</strong> TD prohibits harassment, discrimination, and violence (Unacceptable Behaviour). Any observed or suspected Unacceptable Behaviour must be reported immediately per Section 7B of the Code.</li>
+        <li><strong>Communications:</strong> Unless authorised, employees must not publicly comment on behalf of TD or disclose confidential information. AI tools such as Copilot must be used in compliance with the Electronic Communication Acceptable Use Policy. Do not use personal instant messaging or social media for TD business.</li>
+        <li><strong>Irregular Business Conduct (serious violations):</strong>
+          <ul>
+            <li><em>Anti-Competitive Behaviour:</em> Never fix prices, divide markets, boycott firms, share sensitive business information with competitors, or agree on wage rates with competing employers.</li>
+            <li><em>Bribery &amp; Corruption:</em> Anything of value offered to induce improper performance is a bribe. Facilitation payments are prohibited. Immediately escalate suspected violations to FCRM or via the Ethics hotline.</li>
+            <li><em>Commission Sharing:</em> Sharing finders' fees with unlicensed parties is prohibited.</li>
+            <li><em>Forgery / Falsifying Records:</em> Never manipulate accounts, falsify signatures, create false documents, or obscure the nature of transactions. All records must withstand the closest public scrutiny.</li>
+            <li><em>Insider Trading, Tipping, Recommending:</em> Employees with material non-public information about TD or its clients must not trade in those securities, tip others, or recommend trades. Material information includes acquisitions, mergers, financial problems, new contracts, or dividend declarations. This is a criminal offence. Contact Compliance before acting if uncertain.</li>
+            <li><em>Kiting:</em> Inflating balances with artificial funds is never acceptable. Report suspicious kiting immediately per fraud escalation procedures.</li>
+            <li><em>Market Abuse:</em> Report any observed instances of market manipulation or conduct that could distort financial markets immediately per business procedures.</li>
+            <li><em>Money Laundering:</em> Never knowingly initiate or participate in money laundering. Report suspected money laundering via business escalation procedures, including filing Unusual Transaction Reports/Referrals as applicable.</li>
+            <li><em>Sales Practice Misconduct:</em> Always act in the client's best interests. Understand client needs, circumstances, and financial goals. All recommendations must be transparent, accurate, and made with client consent. Never allow personal gain to come before client needs.</li>
+            <li><em>Sanctions Violations:</em> Never facilitate activity prohibited by sanctions. Report suspected violations immediately, including submitting Unusual Transaction Reports/Referrals.</li>
+            <li><em>Short Selling TD Securities:</em> Employees and directors are prohibited from short selling TD securities, hedging TD equity-based compensation awards, or trading put/call options on TD securities.</li>
+            <li><em>Terrorist/Proliferation Financing:</em> Never deal with sanctioned persons or groups. Report suspected terrorist financing immediately.</li>
+            <li><em>Theft &amp; Fraud:</em> Never misappropriate or embezzle funds, property, benefits, or data belonging to TD or others. Report suspected fraud via the Enterprise Fraud Risk Management Framework procedures.</li>
+            <li><em>Tied Selling:</em> Never coerce clients to obtain another product as a condition of approving their request.</li>
+          </ul>
+        </li>
+        <li><strong>Protecting TD Assets:</strong> All TD property (cash, instruments, data, equipment, premises) must be protected from theft, fraud, harm, or misuse. Report any actual or suspected theft or misuse to your manager, HR, Legal, Privacy, Fraud Operations, or Insider Threat Management.</li>
+        <li><strong>TD Brand &amp; Intellectual Property:</strong> Never misuse TD logos, taglines, or brand assets. All intellectual property created during employment belongs to TD. Never reproduce third-party IP without valid licences.</li>
+        <li><strong>Reasonable Expenses:</strong> Only claim reasonable, actual TD business expenses. A TD corporate credit card may only be used for legitimate TD business. Cash advances on TD corporate cards are strictly prohibited.</li>
+        <li><strong>Cooperating with Audits &amp; Investigations:</strong> You must cooperate fully and provide truthful information to any internal audit, review, or investigation. Never obstruct, hinder, or delay any investigation.</li>
+      </ul>
+
+      <strong>3. Managing Conflicts of Interest:</strong> A conflict exists when personal interests may interfere with acting in TD's best interests. All conflicts must be reported to your manager, Compliance, or HR. Key areas include: personal benefit, corporate opportunities (never use TD information or position for personal gain), relationships in the workplace (relatives must not work in controlling or direct-reporting positions without approval and safeguards), personal financial activities (conduct arm's-length transactions with TD), bequests/executorships from TD clients (disclose immediately), personal borrowing/lending with TD clients (generally prohibited), outside business activities (must be pre-approved), and political/charitable activity (personal contributions permitted, but never commit TD funds without approval).
+
+      <strong>4. Protecting Confidential Information:</strong> Confidential information includes client personal information, employee personal information, and corporate information not publicly known. Must not access, retain, use, or disclose confidential information after employment ends. Never use confidential information from former employers at TD. Passwords must never be shared. Computers must be locked when unattended. AI must be used responsibly per the Enterprise AI Risk Management Policy.
+
+      <strong>5. Disclosure of TD Information:</strong> All employees must comply with TD's Disclosure Policy. Never trade on or disclose material non-public information.
+
+      <strong>6. Work Environment:</strong> Maintain professional appearance per business dress codes. Report all accidents, injuries, and unsafe conditions. Follow TD's Physical Security Risk Management Policy. Video surveillance is used in common areas for security purposes.
+
+      <strong>7. Complying with the Code:</strong>
+      <ul>
+        <li><strong>Reporting Violations:</strong> Report violations immediately via: your manager or HR; an executive officer, business head, or department head; Insider Threat Management; other escalation channels; or anonymously via the Conduct and Ethics Reporting hotline at <strong>1-866-293-2365</strong> (24/7) or online via EthicsPoint. The Employee Ombudsman Office (Between Us) also provides confidential, informal guidance.</li>
+        <li><strong>Retaliation:</strong> TD strictly prohibits retaliation against anyone who reports a concern in good faith, cooperates with an investigation, or exercises legal rights to communicate with government authorities.</li>
+        <li><strong>Failure to Comply:</strong> May result in formal written discipline, unpaid suspension, termination of employment, and impact on performance ratings and incentives. Criminal prosecution may also result.</li>
+        <li><strong>Annual Attestation:</strong> All active employees and directors must complete annual Code training and attestation as a condition of employment.</li>
+        <li><strong>Waivers:</strong> Waivers for employees require approval from the executive officer, most senior HR executive, and Enterprise Head of HR. Waivers for executive officers and directors require Audit Committee approval.</li>
+      </ul>
+      <span class="policy-ref">REF: Code of Conduct and Ethics — January 2026 (PDF) · Approved by Corporate Governance Committee Dec 2, 2025</span>`
+  },
+
+  // ── AML / ATF / SANCTIONS (Mar 2026 PDF) ──
+  {
+    keywords: ['aml','atf','anti-money laundering','money laundering','anti-terrorist financing','terrorist financing','sanctions','fintrac','kyc','know your customer','customer due diligence','beneficial owner','pep','politically exposed','suspicious transaction','str','unusual transaction','fcrm','financial crime','camlo','bsa officer','three lines of defence','transaction monitoring','sanctions screening','sanctions evasion','large cash','cash reporting','proceeds of crime'],
+    policy: 'AML, ATF & Sanctions',
+    answer: `The <strong>TD Bank Group Statement on AML, ATF and Sanctions</strong> (March 2026) describes TD's risk-based Financial Crime Risk Management (FCRM) Program. The Program is overseen by the Global Head of FCRM who serves as the Board-approved Chief Anti-Money Laundering Officer (CAMLO) and U.S. Bank Secrecy Act (BSA) Officer.
+
+      <strong>Three Lines of Defence Model:</strong>
+      <ul>
+        <li><strong>First Line:</strong> Owns, manages, and monitors risks; implements and executes controls defined by the second line.</li>
+        <li><strong>Second Line:</strong> Establishes policies, standards, guidance; oversees program execution; reports to the Board.</li>
+        <li><strong>Third Line (Internal Audit):</strong> Independently assesses effectiveness of policies, procedures, and controls; enables remediation and transparent Board reporting.</li>
+      </ul>
+
+      <strong>Program Elements — all employees must know:</strong>
+      <ul>
+        <li><strong>Board and Senior Management Oversight</strong> of the FCRM Program at all times.</li>
+        <li><strong>Policies and Standards</strong> addressing all applicable AML/ATF and sanctions laws, rules, and regulations.</li>
+        <li><strong>Mandatory Annual Training:</strong> All employees, directors, and those acting on behalf of TD must complete mandatory annual FCRM e-learning covering money laundering risks linked to human trafficking and procedures for escalating suspicious activity.</li>
+        <li><strong>Know Your Customer (KYC):</strong> TD verifies client identity at onboarding and conducts ongoing, risk-based due diligence throughout the client relationship. Enhanced due diligence applies to Politically Exposed Persons (PEPs) and high-risk clients.</li>
+        <li><strong>Transaction Monitoring:</strong> Risk-based monitoring to detect and report to applicable authorities instances of suspicious activity, terrorist financing, and sanctions-prohibited transactions.</li>
+        <li><strong>FCRM Risk Assessments:</strong> Identify and assess money laundering, terrorist financing, and sanctions risk exposure and the effectiveness of controls.</li>
+        <li><strong>Independent Testing</strong> of the FCRM Program by Internal Audit.</li>
+        <li><strong>Unusual Transaction Reports (UTRs):</strong> Employees must submit UTRs/Referrals when they suspect money laundering, terrorist financing, or sanctions violations. Tipping off a subject is a criminal offence.</li>
+        <li><strong>Sanctions:</strong> TD takes reasonable steps to ensure its products and services are not used to violate or circumvent sanctions laws. Violations can result in civil and criminal liability for TD and individual employees.</li>
+        <li><strong>Top Priority:</strong> The remediation and implementation of an effective and sustainable AML/ATF Program remains TD's top priority as of March 2026.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Bank Group Statement on AML, ATF and Sanctions (PDF, March 2026)</span>`
+  },
+
+  // ── ANTI-CORRUPTION (Mar 2026 PDF) ──
+  {
+    keywords: ['anti-corruption','corruption','bribery','bribe','facilitation payment','foreign corrupt practices','kickback','abac','global abac','chief abac officer','corruption of foreign public officials','uk bribery act','gift approval','vendor due diligence','employee screening','zero tolerance bribery','government official'],
+    policy: 'Anti-Corruption',
+    answer: `The <strong>TD Bank Group Statement on Anti-Corruption</strong> (March 2026) describes TD's Global Anti-Bribery and Anti-Corruption (ABAC) Program.
+
+      <strong>Legal Framework considered by the Global ABAC Program:</strong>
+      <ul>
+        <li>Canada's Corruption of Foreign Public Officials Act and Criminal Code</li>
+        <li>The U.S. Foreign Corrupt Practices Act (FCPA)</li>
+        <li>The U.K. Bribery Act</li>
+      </ul>
+
+      <strong>Program Structure:</strong> Part of FCRM, using a three lines of defence model. Responsibility resides with the Chief ABAC Officer. Enterprise and TDGUS ABAC Policies are reviewed annually and approved by relevant Board committees. Safeguarding TD's reputation and complying with legal and regulatory requirements are the responsibilities of every TD employee.
+
+      <strong>Program Elements:</strong>
+      <ul>
+        <li><strong>Zero Tolerance:</strong> Enterprise and TDGUS ABAC Policies establish zero tolerance for bribery and corruption, explicitly prohibiting facilitation payments.</li>
+        <li><strong>Training:</strong> Ongoing training for employees, directors, and those acting on behalf of TD.</li>
+        <li><strong>Internal Controls:</strong> Pre-approval requirements and specific guidelines for gifts, travel, and entertainment to/from third parties; third-party (vendor/agent) due diligence; employee screening.</li>
+        <li><strong>Risk Assessment:</strong> Assessment of bribery and corruption risks across TD's global footprint.</li>
+        <li><strong>Escalation and Reporting:</strong> Internal escalation points, incident management, and a confidential whistleblower hotline.</li>
+        <li><strong>Code of Conduct:</strong> Anti-bribery and anti-corruption stipulations in the Code of Conduct and Ethics require annual attestation by all eligible employees, third-party workers, and directors.</li>
+        <li><strong>Independent Testing:</strong> Periodic review and independent testing to assess Global ABAC Program effectiveness. The Program is routinely evaluated and updated to reflect changes in business activities and legal requirements.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Bank Group Statement on Anti-Corruption (PDF, March 2026)</span>`
+  },
+
+  // ── RESPECTFUL WORKPLACE (Mar 2026 PDF) ──
+  {
+    keywords: ['respectful workplace','harassment','discrimination','bullying','workplace violence','sexual harassment','unacceptable behaviour','dignity','respect','hostile work','intimidation','abuse','complaint process','reporting harassment','retaliation','investigation harassment','third party worker','vendor conduct','human rights'],
+    policy: 'Respectful Workplace Policy',
+    answer: `The <strong>TD Respectful Workplace Policy</strong> (Summary, March 2026) applies globally to all employees, directors, and third-party workers. It sets minimum standards across the entire TD enterprise.
+
+      <strong>Scope:</strong> "Workplace" includes any location where a TD employee, director, or third-party worker is present as a result of their employment or association with TD. This includes customers, vendors, and members of the public in a business relationship with TD.
+
+      <strong>Unacceptable Behaviour</strong> means conduct constituting harassment, discrimination, or violence (including sexual harassment/violence) occurring in or having an actual or potential adverse impact on a TD Workplace.
+
+      <strong>Zero Tolerance:</strong> TD unconditionally prohibits and will not tolerate, ignore, or condone any Unacceptable Behaviour.
+
+      <strong>Universal Standard:</strong>
+      <ul>
+        <li>Every employee, prospective employee, director, third-party worker, customer, vendor, or other person in a business relationship with TD must be treated with dignity and respect, and not subjected to Unacceptable Behaviour.</li>
+        <li>Every employee, director, or third-party worker is personally responsible for maintaining a positive work environment and not engaging in Unacceptable Behaviour, including in interactions with customers, vendors, and members of the public.</li>
+        <li>In accordance with TD's Statement on Human Rights, TD is committed to an environment where every customer and client is treated with dignity and respect.</li>
+      </ul>
+
+      <strong>Reporting Obligations:</strong>
+      <ul>
+        <li>Any employee or third-party worker who has experienced, witnessed, or been told about Unacceptable Behaviour must immediately report it through any available reporting channel in TD's Code of Conduct and Ethics.</li>
+        <li>Any director must immediately report to the General Counsel (or, if the General Counsel is involved, to the Enterprise Head of Human Resources).</li>
+      </ul>
+
+      <strong>Consequences:</strong>
+      <ul>
+        <li>Employees failing to comply may face disciplinary action up to and including termination of employment.</li>
+        <li>TD may also terminate its relationship with non-employee individuals who fail to comply.</li>
+        <li>TD strictly prohibits any retaliation against anyone who reports Unacceptable Behaviour in good faith.</li>
+      </ul>
+
+      <strong>Training and Support:</strong> TD trains employees to maintain and be accountable for a workplace free from Unacceptable Behaviour. Managers are trained to promptly address concerns they observe or that are raised to them. Support is available to employees and directors impacted by Unacceptable Behaviour.
+      <span class="policy-ref">REF: Summary of Respectful Workplace Policy (PDF, March 2026)</span>`
+  },
+
+  // ── HEALTH & SAFETY (Sep 2025 PDF) ──
+  {
+    keywords: ['health and safety','workplace safety','occupational health','injury','incident','hazard','hazard prevention','emergency preparedness','evacuation plan','safety committee','health safety program','health safety policy','accident reporting','near miss','unsafe condition','safe work','violence prevention','workplace inspection','health safety training','north american health','health safety committee'],
+    policy: 'Health & Safety Policy',
+    answer: `The <strong>TD Health and Safety Policy and Program</strong> (Summary, September 2025) applies to all business segments across TD's North American footprint, covering all TD employees, third-party workers, contingent workers, contractors, and visitors.
+
+      <strong>Accountability:</strong> In Canada, the Senior Vice President, HR Shared Services, has oversight and accountability for health and safety. In the U.S., it is the Head of U.S. Total Rewards and HR Governance. The Program is evaluated annually, with quantitative metrics reviewed and action plans developed as needed.
+
+      <strong>Health and Safety Committees:</strong> Where applicable, TD has Health and Safety Committees made up of management and non-management employees from various departments and job classifications. Committees are consulted regularly, review internal safety data for trends (injury types and volumes), identify risks and hazards, and refer suggestions to business management. Employees may submit feedback or concerns to the Health and Safety team and/or Committees at any time. All matters raised are reviewed and discussed by HR before a final decision is reached.
+
+      <strong>Hazard Prevention:</strong> TD has programs in place to identify and mitigate or remove workplace hazards, governing procedures for identifying and assessing hazards, implementing preventive measures, supporting employee hazard prevention education, and internal hazard reporting. Employees conduct workplace inspections. External third parties with required expertise may be engaged where necessary.
+
+      <strong>Workplace Incidents:</strong>
+      <ul>
+        <li>All employees, third-party workers, contingent workers, contractors, and visitors are required to report hazards, incidents, accidents, and health and safety concerns per the steps on TD's intranet.</li>
+        <li>TD has a process requiring reporting of all accidents and incidents; the Health and Safety team reviews and in some cases further investigates each one.</li>
+        <li>Annually, the Health and Safety team provides executive management with a report on data trends and thresholds, compared against banking industry frequency and incident rates. Results are used to evaluate performance and manage risk.</li>
+      </ul>
+
+      <strong>Emergency Preparedness:</strong> Where applicable, TD maintains written emergency evacuation plans for workplaces or written procedures for specific emergency situations. Designated employees are trained and assigned to facilitate evacuation of premises.
+
+      <strong>Education and Training:</strong> Employees in both Canada and the U.S. have access to health and safety information, resources, and procedures on TD's intranet, and must complete training related to key elements of the Policy and Program as required.
+      <span class="policy-ref">REF: Summary of North American Health and Safety Policy (PDF, September 2025)</span>`
+  },
+
+  // ── MENTAL HEALTH (Mar 2026 PDF) ──
+  {
+    keywords: ['mental health','wellbeing','well-being','stress','burnout','psychological safety','efap','employee assistance','eap','anxiety','depression','stigma','distress','crisis','mentally flourishing','well-being ambassador','path to leadership','return to work','resilience','total well-being','four pillars','counselling','mental health coverage','virtual healthcare','well-being app','notice and respond','fundamentals workplace mental health'],
+    policy: 'Mental Health in the Workplace',
+    answer: `<strong>TD's Approach to Mental Health in the Workplace</strong> (March 2026) describes TD's holistic commitment to the mental health and total well-being of its approximately 100,000 colleagues globally.
+
+      <strong>Well-being Framework — Four Interconnected Pillars:</strong>
+      <ul>
+        <li><strong>Physically Thriving:</strong> Understanding and managing one's health, practicing illness prevention and feeling your best at home and at work.</li>
+        <li><strong>Mentally Flourishing:</strong> Realizing your own potential, coping with normal stresses, and being productive at home and at work.</li>
+        <li><strong>Financially Secure:</strong> Having the financial knowledge and resources to manage commitments, meet goals, and cope with financial shocks.</li>
+        <li><strong>Socially Connected:</strong> Feeling connected to people and the community as a whole, believing in your own self-worth and usefulness to society.</li>
+      </ul>
+
+      <strong>Governance:</strong> TD's HR group manages well-being strategies, programs, and policies day-to-day via a dedicated Retirement, Benefits and Well-being team. The Human Resources Committee (HRC) of the Board oversees policies supporting a healthy and safe workplace and employee well-being. TD uses the Canadian National Standard for Psychological Safety as a guidepost for HR programs and policies.
+
+      <strong>Programs and Services Available to All Colleagues:</strong>
+      <ul>
+        <li><strong>Employee and Family Assistance Program (EFAP):</strong> Confidential, third-party counselling and referral service covering mental health challenges, family issues, financial issues, and more. Available to all colleagues and immediate family members globally, including short-term contract colleagues. In 2025, expanded to include 24/7 care navigation and enhanced mental health support. People managers have access to dedicated support for navigating sensitive situations.</li>
+        <li><strong>Virtual Healthcare:</strong> On-demand, 24/7 medical consultations including support from nurse practitioners to assess immediate mental health problems.</li>
+        <li><strong>Well-being Apps:</strong> Consumer-grade platforms providing personalised well-being content and tools. As of October 2025, over 25,000 TD colleagues in Canada and over 12,600 in the U.S. have joined.</li>
+        <li><strong>Mental Health Benefits Coverage:</strong> Eligible colleagues have coverage for psychologists, family therapists, marriage counsellors, registered clinical counsellors, and more.</li>
+        <li><strong>Paid Time Off (Canada):</strong> Up to 2 paid days for personal reasons including family well-being; up to 3 paid days for family health or urgent family matters. <strong>(U.S.):</strong> 7 flex paid days annually for any reason.</li>
+        <li><strong>Flexible Work Options:</strong> Where possible, compressed/reduced workweeks, job shares, transition from leave, and remote work opportunities.</li>
+        <li><strong>Critical Incident Trauma Response:</strong> Immediate access to professional care for potentially traumatic events such as robbery or the death of a colleague. Available in Canada, U.S., and U.K.</li>
+        <li><strong>Well-being Ambassador Program:</strong> Network of employee volunteers across Canada, U.S., Europe, and Asia who share well-being resources, raise awareness, and support colleagues. As of December 2025, the TD Well-being Community had over 7,000 subscribers.</li>
+      </ul>
+
+      <strong>Manager Responsibilities and Training:</strong>
+      <ul>
+        <li><strong>Psychological Safety Course:</strong> Developed with the Canadian National Standard for Psychological Safety, equipping managers to foster safe environments.</li>
+        <li><strong>Path to Leadership:</strong> A 7-month program for first-time and new-to-TD people managers covering mental health, psychological safety, and everyday inclusion habits.</li>
+        <li><strong>Notice and Respond (U.S.):</strong> Training helping managers identify potential mental health crises. Over 1,800 managers attended live training in 2025. The vast majority said they felt more confident supporting colleagues after completing it.</li>
+        <li><strong>Manager Conversation Guide:</strong> Helps managers facilitate conversations with colleagues about mental health and encourages regular follow-ups.</li>
+        <li><strong>Leading a Mentally Healthy Workplace (Canada):</strong> A course for people managers within the Fundamentals for Workplace Mental Health Training series. Additional courses for all colleagues include Mental Health Awareness and Reducing Stigma, Coping Skills, Assisting Others, and Getting Support.</li>
+      </ul>
+
+      <strong>Return to Work:</strong> TD's comprehensive disability program includes short- and long-term disability support for mental health illnesses. When a colleague is ready to return, a third-party vendor works with the colleague, their treating physician, and their manager to build a return-to-work plan, which may include modified hours or accommodations.
+
+      <strong>Mental Health Awareness:</strong> TD recognises Mental Health Awareness Month each May. In 2025, the campaign "Show up for Mental Health" used the 3 C's: clarity, compassion, and community. In November 2025, TD developed a global Men's Health Hub with mental health resources. TD also provided a $2 million donation to St. Michael's Hospital Foundation to support programs helping people experiencing homelessness and social isolation.
+      <span class="policy-ref">REF: TD's Approach to Mental Health in the Workplace (PDF, March 2026)</span>`
+  },
+
+  // ── FAIR PAY (Mar 2026 PDF) ──
+  {
+    keywords: ['fair pay','pay equity','pay gap','equal pay','compensation review','salary structure','pay transparency','gender pay','visible minority pay','unadjusted pay gap','adjusted pay','pay equity act','bc pay transparency','pay equity committee','job evaluation','incentive compensation','total compensation','pay review','salary range','wage','remuneration'],
+    policy: 'Fair Pay',
+    answer: `<strong>TD's Approach to Fair Pay</strong> (March 2026) describes TD's commitment to fair, equitable, and transparent compensation for over 95,000 employees globally. Diversity and inclusion are core values and strategic business priorities.
+
+      <strong>Foundational Programs and Structures:</strong>
+      <ul>
+        <li>Compensation eligibility (salary and incentive) is based on role and level, applied consistently for all employees.</li>
+        <li>Most employees are paid according to well-defined salary structures providing a competitive range while allowing variation to recognise individual performance, experience, and capability.</li>
+        <li>Salary structures are supported by market analysis and a robust job evaluation process that measures position content and groups jobs of similar complexity and accountability into job levels.</li>
+        <li>Salary structures and incentive programs are reviewed regularly using recognised third-party compensation surveys, with adjustments made to maintain market-competitive pay.</li>
+        <li>All employees (by jurisdiction and business) participate in the same benefits programs and base retirement arrangements.</li>
+        <li>Year-end tools include guidelines and manager training for consistency. Decisions go through a review process to monitor outcomes.</li>
+        <li>TD conducts detailed statistical analysis of compensation to assess potential differences in outcomes.</li>
+      </ul>
+
+      <strong>2025 Pay Review Results</strong> (95,000+ employees globally, adjusted for level, geography, and role):
+      <ul>
+        <li>Women earn <strong>more than 99 cents</strong> for every dollar earned by men.</li>
+        <li>Visible minorities in Canada earn <strong>more than 99 cents</strong> for every dollar earned by non-visible minority colleagues.</li>
+        <li>Minorities in the U.S. earn <strong>one dollar</strong> for every dollar earned by non-minority colleagues.</li>
+      </ul>
+
+      <strong>Canadian Total Compensation Results by Position Group (Women vs. Men, adjusted):</strong>
+      <ul>
+        <li>Executive (E01 and above): <strong>98%</strong></li>
+        <li>Management and Experienced Professionals (levels 9–11): <strong>99%</strong></li>
+        <li>Supervisory and Professionals (levels 7–8): <strong>100%</strong></li>
+        <li>Admin and Operations (level 6 and below): <strong>100%</strong></li>
+        <li>Overall: <strong>99%</strong></li>
+      </ul>
+
+      <strong>Unadjusted Pay Gaps:</strong> Measure average/median difference in pay without adjusting for job level, function, or experience. They reflect representation differences (e.g., more men in senior or higher-paying roles) and are not reflective of differences for employees doing similar work. TD discloses unadjusted pay gaps annually in Canada for women, Indigenous peoples, visible minorities, and persons with disabilities through the Government of Canada's online tool for federally regulated industries. TD also publishes UK and Ireland Gender Pay Gap reports annually. TD published its first unadjusted pay gap report for provincially regulated employees in British Columbia in November 2025 under BC's Pay Transparency legislation.
+
+      <strong>Canadian Pay Equity:</strong> TD established a pay equity committee (management and elected employee representatives) to develop a pay equity plan under the federal Pay Equity Act. Provincial pay equity plans are also maintained in Ontario and Quebec.
+
+      <strong>Pay Transparency:</strong> All Canadian and U.S. job postings include pay details. All salary ranges are posted on TD's internal intranet for all colleagues to access.
+      <span class="policy-ref">REF: TD's Approach to Fair Pay (PDF, March 2026)</span>`
+  },
+
+  // ── MODERN SLAVERY & HUMAN TRAFFICKING (Feb 2026 PDF) ──
+  {
+    keywords: ['modern slavery','human trafficking','forced labour','child labour','supply chain human rights','trafficking','slavery','exploitation','supplier code of conduct','project reclaim','precious metals','lbma','anti-trafficking','forced labor','labor practices','supply chain risk','victim services','coercive debt','supplier due diligence','third party supplier','supplier human rights','supply chain audit'],
+    policy: 'Modern Slavery & Human Trafficking',
+    answer: `<strong>TD Modern Slavery and Human Trafficking Report</strong> approved by the Board of Directors and signed by Raymond Chun, Group President and CEO (February 25, 2026). Published under the UK Modern Slavery Act 2015 and Australia's Modern Slavery Act 2018.
+
+      <strong>Structure:</strong> TD is headquartered in Toronto with more than 100,000 employees operating primarily in Canada and the U.S., with operations in the UK, Europe, and Asia-Pacific. The vast majority of third-party suppliers are in Canada and the U.S.
+
+      <strong>Identified Risks:</strong> Financial services can be used directly or indirectly to support modern slavery and human trafficking. Supply chain risks include electronics, office furniture, garments, staffing agencies, offshoring services, hospitality services, and refined metals.
+
+      <strong>Supplier Due Diligence:</strong>
+      <ul>
+        <li>New suppliers must register through TD's enterprise procurement system confirming compliance with TD's <strong>Supplier Code of Conduct</strong>. The six criteria relevant to modern slavery are: Legal Compliance, Respect for Human Rights, Fair Labour Practices, Protection of Health and Safety, Code of Conduct and Ethics, and Corporate Responsibility.</li>
+        <li>High- and medium-risk contracts require third parties to comply with applicable law and notify TD of enforcement actions. TD retains the right to terminate for cause including non-compliance with law.</li>
+        <li>In fiscal 2025, TD assessed <strong>96 key suppliers</strong> for environmental and social (E&S) risks including modern slavery under its enhanced third-party risk management program.</li>
+        <li>In fiscal 2025, TD launched a cloud-based Environmental and Social Risk Hub for assessing, escalating, and monitoring E&S risks in non-retail credit lending.</li>
+      </ul>
+
+      <strong>Employee and Contractor Obligations:</strong>
+      <ul>
+        <li>TD abides by applicable labour laws on equal pay, hours of work, and child labour. New employees undergo relevant checks where permitted by law.</li>
+        <li>The Respectful Workplace Policy requires all employees, directors, and third-party workers to treat everyone with dignity and respect, without harassment, discrimination, or violence.</li>
+        <li>All active employees and directors globally must complete annual Code of Conduct and Ethics training and attest to compliance annually.</li>
+        <li>Eligible U.S. employees attest annually to TD's Anti-Trafficking Policy, which prohibits trafficking in persons and certain recruitment practices (e.g., charging recruitment fees, denying access to identity documents).</li>
+      </ul>
+
+      <strong>Training:</strong> All employees must complete mandatory annual FCRM e-learning covering money laundering risks linked to human trafficking and procedures for escalating suspicious activity. In fiscal 2025, TD enhanced this content and provided specialised training to FCRM Investigations teams. TD also featured presentations from a trafficking survivor and a non-profit supporting victims to strengthen enterprise-wide awareness.
+
+      <strong>Grievance Mechanisms:</strong> The Conduct and Ethics Reporting hotline (1-866-293-2365, 24/7) provides a confidential, anonymous channel for internal and external parties to report concerns without fear of retaliation. The Between Us: Employee Ombudsman Office provides confidential, informal, impartial guidance.
+
+      <strong>Project Reclaim:</strong> In partnership with Victim Services Toronto (VST), TD participates in Project Reclaim, supporting survivors of human trafficking across Canada who have incurred fraudulent or coercive debt. In 2025, TD cleared the debt of ten clients who carried coercive debt. TD provided VST with a three-year $360,000 grant for program expansion.
+
+      <strong>Precious Metals:</strong> TD's Global Metals Desk only sources precious metals from LBMA-approved refiners or LBMA market participants, complying with LBMA Good Delivery Standards for responsible sourcing.
+      <span class="policy-ref">REF: TD Modern Slavery and Human Trafficking Report (PDF, February 2026) — Signed by Raymond Chun, Group President and CEO</span>`
+  },
+
+  // ── PRIVACY / DATA PROTECTION ──
+  {
+    keywords: ['privacy','personal information','pipeda','privacy act','data security','information handling','gdpr','privacy officer','personal data','customer information','sharing data','customer data','data breach','privacy breach','confidential customer'],
+    policy: "Privacy Policy",
+    answer: `TD Bank Group is committed to protecting the privacy of its customers and employees in accordance with applicable privacy legislation including Canada's <em>Personal Information Protection and Electronic Documents Act (PIPEDA)</em> and provincial equivalents.
+      <ul>
+        <li><strong>Collection:</strong> TD only collects personal information that is necessary for identified purposes and obtains consent as required by law.</li>
+        <li><strong>Use & Disclosure:</strong> Personal information is used only for the purposes for which it was collected, or as required or permitted by law. It is not sold to third parties.</li>
+        <li><strong>Safeguarding:</strong> TD maintains physical, electronic, and procedural safeguards to protect personal information against unauthorised access, use, or disclosure.</li>
+        <li><strong>Employee Obligations:</strong> Employees must access customer or employee personal information only on a need-to-know basis for legitimate business purposes. Unauthorised access or disclosure of personal information is a serious policy violation and may result in disciplinary action, up to and including termination.</li>
+        <li><strong>Data Breaches:</strong> Employees must immediately report any suspected privacy breach or unauthorised disclosure of personal information to their manager and Privacy/Compliance.</li>
+        <li><strong>Customer Rights:</strong> Customers have the right to access their personal information held by TD and to request corrections.</li>
+        <li><strong>Retention:</strong> Personal information is retained only as long as necessary to fulfil the purposes for which it was collected or as required by law, and is then securely destroyed.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Privacy Policy · Applicable under PIPEDA & Provincial Laws</span>`
+  },
+
+  // ── SUSTAINABILITY / ESG ──
+  {
+    keywords: ['sustainability','esg','environment','climate','greenhouse gas','carbon','emissions','sustainable finance','green','net zero','decarbonization','responsible','social governance','renewable'],
+    policy: "Sustainability & ESG",
+    answer: `TD Bank Group has a comprehensive <strong>Environmental, Social and Governance (ESG)</strong> program that underpins its approach to sustainability.
+      <ul>
+        <li><strong>Sustainable Financing:</strong> TD has set targets for sustainable and transition financing to support customers and clients transitioning to a low-carbon economy. These are outlined in the TD Sustainable Financing Report and the TD Sustainable & Decarbonization Finance Target Methodology.</li>
+        <li><strong>Climate Commitments:</strong> TD has committed to achieving net-zero greenhouse gas (GHG) emissions across its operations and financed activities by 2050, with interim targets.</li>
+        <li><strong>ESG Reporting:</strong> TD publishes an annual Sustainability Report, Sustainability Performance Data Pack, and Sustainability Reporting Details document aligned with global frameworks including TCFD, GRI, and SASB.</li>
+        <li><strong>Green Banking:</strong> TD offers products and services that support environmentally responsible choices by customers.</li>
+        <li><strong>Sustainable Insurance:</strong> TD Insurance follows the UN Principles for Sustainable Insurance (PSI), disclosed annually.</li>
+        <li><strong>Employee Role:</strong> All employees are encouraged to participate in TD's sustainability initiatives, including energy conservation, waste reduction, and charitable activities through the TD Ready Commitment program.</li>
+        <li><strong>LBG Verification:</strong> TD's community investment reporting is independently verified under the London Benchmarking Group (LBG) methodology.</li>
+      </ul>
+      <span class="policy-ref">REF: FY2025 Sustainability Update (PDF)</span><span class="policy-ref">TD Sustainable Financing Report (PDF, 2025)</span>`
+  },
+
+  // ── DIVERSITY & INCLUSION ──
+  {
+    keywords: ['diversity','inclusion','equity','dei','indigenous','black','women','disability','2slgbtq','lgbtq','accessibility','race','gender','belonging','equitable'],
+    policy: "Diversity, Equity & Inclusion",
+    answer: `TD Bank Group is deeply committed to <strong>Diversity, Equity and Inclusion (DEI)</strong> across all aspects of its business and culture.
+      <ul>
+        <li><strong>Core Communities:</strong> TD's diversity and inclusion strategy focuses on Indigenous peoples, Black communities, women, people with disabilities, and 2SLGBTQ+ individuals.</li>
+        <li><strong>Indigenous Peoples:</strong> TD has a dedicated Indigenous Banking strategy and supports Indigenous communities through banking services, investment, and the TD Ready Commitment. TD acknowledges its operations on the traditional territories of Indigenous peoples.</li>
+        <li><strong>Black Communities:</strong> TD has made commitments to address systemic racism and support Black employees and communities in Canada, including specific hiring and advancement initiatives.</li>
+        <li><strong>Women:</strong> TD supports gender equality and has programs to advance women in leadership roles across the organization.</li>
+        <li><strong>2SLGBTQ+:</strong> TD is a long-standing supporter of 2SLGBTQ+ rights and inclusion, reflected in its employee benefits, workplace policies, and community partnerships.</li>
+        <li><strong>Accessibility:</strong> TD has an Accessibility Plan to remove barriers for people with disabilities in its products, services, employment, and workplace environment.</li>
+        <li><strong>Employee Resource Groups:</strong> TD has employee resource groups for various communities to support belonging and provide input into business strategy.</li>
+        <li><strong>Manager Accountability:</strong> Leaders at TD are accountable for creating inclusive environments within their teams. DEI considerations are embedded in performance expectations.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Accessibility Plan (PDF)</span><span class="policy-ref">Diversity & Inclusion · td.com</span>`
+  },
+
+  // ── JOB TRANSITIONS (2025 PDF) ──
+  {
+    keywords: ['job transitions','restructuring','layoff','laid off','job loss','role elimination','redundancy','redeployment','severance','workforce change','displacement','outplacement','advance notice','internal mobility','attrition','job search support','losing job','position eliminated','let go','workforce reduction'],
+    policy: 'Job Transitions',
+    answer: `<strong>TD's Approach to Job Transitions</strong> describes how TD supports employees whose roles are affected by organisational changes such as the consolidation or reassignment of work, as TD works to improve operations and simplify processes.
+
+      <strong>To Help Minimise Impact, TD's Practice is to:</strong>
+      <ul>
+        <li>Inform employees as early and often as possible when changes are coming.</li>
+        <li>Attempt to identify similar vacant opportunities within TD so affected employees can be redeployed internally before any external separation.</li>
+        <li>Minimise the number of affected positions by managing attrition and controlling hiring levels in advance.</li>
+        <li>Provide appropriate support including Employee Assistance Programs throughout the transition period.</li>
+      </ul>
+
+      <strong>In Cases of Job Loss, TD's Approach is to:</strong>
+      <ul>
+        <li>Provide employees with as much advance notice as possible.</li>
+        <li>Provide severance and notice in accordance with applicable regulatory requirements and industry best practices. Specific entitlements depend on role, tenure, and jurisdiction.</li>
+        <li>Provide access to no-cost outplacement services to help employees with job searching and career transition.</li>
+        <li>Provide access to TD's Employee and Family Assistance Program (EFAP) for confidential counselling and support during and after the transition period.</li>
+      </ul>
+      <span class="policy-ref">REF: TD's Approach to Job Transitions (PDF, 2025)</span>`
+  },
+
+  // ── CORPORATE GOVERNANCE ──
+  {
+    keywords: ['corporate governance','board of directors','director independence','majority voting','governance guideline','disclosure policy','shareholder','proxy','committee','audit committee','risk committee'],
+    policy: "Corporate Governance",
+    answer: `TD Bank Group maintains robust <strong>corporate governance</strong> practices in accordance with applicable law and best practices for financial institutions.
+      <ul>
+        <li><strong>Board Structure:</strong> TD's Board of Directors is responsible for the stewardship of the Bank. The Board has several standing committees: Audit, Risk, Human Resources, Corporate Governance, and others.</li>
+        <li><strong>Director Independence:</strong> TD's Director Independence Policy sets out the criteria used to assess the independence of directors, ensuring the Board can exercise objective judgment.</li>
+        <li><strong>Disclosure Policy:</strong> TD's Disclosure Policy governs how TD communicates material information to shareholders, regulators, and the public in a timely and accurate manner.</li>
+        <li><strong>Majority Voting Policy:</strong> TD's Majority Voting Policy provides that a director who receives more withheld votes than for votes in an uncontested election must offer to resign from the Board.</li>
+        <li><strong>Corporate Governance Guideline:</strong> This guideline outlines the responsibilities of the Board and management and sets standards for governance practices at TD.</li>
+        <li><strong>Ethics Reporting:</strong> TD has a confidential Ethics Reporting hotline that allows employees, directors, and third parties to report concerns about accounting, auditing, internal controls, or other ethics matters.</li>
+      </ul>
+      <span class="policy-ref">REF: Corporate Governance Guideline (PDF)</span><span class="policy-ref">Director Independence Policy (PDF)</span><span class="policy-ref">Disclosure Policy (PDF)</span>`
+  },
+
+  // ── EMPLOYEE BENEFIT PROGRAMS (Mar 2026 PDF) ──
+  {
+    keywords: ['benefits','benefit programs','pension','health plan','dental','disability','life insurance','maternity leave','parental leave','vacation','paid time off','pto','employee ownership plan','wellness account','health spending account','flex benefits','retiree benefits','employee future builder','scholarship','banking benefits','fertility','adoption','surrogacy','doula','breastfeeding','childcare','dependent care','flu shot','service recognition','td celebrates careers','esop','share incentive','defined contribution','401k','group pension','rrsp','tfsa'],
+    policy: 'Employee Benefit Programs',
+    answer: `<strong>TD's Summary of Benefit Programs</strong> (March 2026) covers employees in Canada, the U.S., and the U.K.
+
+      <strong>Retirement Plans:</strong>
+      <ul>
+        <li><strong>Canada — Defined Contribution Pension:</strong> Annual fixed employer contribution of 3% (rising to 4% for 10+ years of service) of eligible earnings capped at $200,000 ($150,000 for commission-paid colleagues). Colleagues contribute up to 5%; TD matches 50% for under 5 years of service, rising to 100% for 5+ years. Total TD-funded opportunity: 3%–9% of eligible earnings. Colleagues hired on or before December 31, 2018 participate in a defined benefit pension plan.</li>
+        <li><strong>U.S. — 401(k):</strong> Annual fixed employer contribution of 2%–6% of eligible earnings capped at $150,000. TD matches colleague contributions up to a maximum of 4.5% of pay. Total TD-funded opportunity: 6.5%–10.5% of pay.</li>
+        <li><strong>U.K. — Group Personal Pension Plan:</strong> TD core contribution of 8% of eligible earnings. TD matches 100% of mandatory member contributions of 1% and voluntary contributions of up to 2%. Eligible earnings capped at £150,000.</li>
+      </ul>
+
+      <strong>Key Benefit Plans:</strong>
+      <ul>
+        <li>Flexible shared-cost benefit plan for eligible colleagues and dependants covering medical, dental, disability, life, accident insurance, and vision care — Canada, U.S., U.K.</li>
+        <li><strong>Maternity/Parental Leave Top-Up (Canada):</strong> 8-week 100% salary top-up for maternity leave, plus 8-week 100% salary top-up for each parent taking parental leave.</li>
+        <li><strong>Paid Parental Leave (U.S.):</strong> 6–8 weeks pregnancy-related disability leave plus 16 weeks fully paid bonding leave for all eligible parents welcoming a new child.</li>
+        <li><strong>Maternity/Parental Leave (U.K.):</strong> 26 weeks fully paid maternity leave plus 18 weeks fully paid shared parental leave.</li>
+        <li><strong>Wellness Spending Account (Canada):</strong> Use TD-paid benefit credits for medical expenses not covered by the benefits plan, fitness programs and equipment, and various counselling and preventive items for yourself and eligible family members.</li>
+        <li><strong>Paid Vacation:</strong> Based on job level and length of service in Canada and U.S.; 25 days regardless of level in the U.K.</li>
+        <li><strong>Personal Days (Canada):</strong> Up to 2 paid days for personal reasons including religious/cultural holidays or personal/family well-being; up to 3 paid days for family health or urgent family matters.</li>
+        <li><strong>Flex PTO (U.S.):</strong> Bank of Vacation PTO and Flex PTO, usable for any reason.</li>
+        <li>Family planning coverage (fertility, adoption, surrogacy) — Canada and U.S.</li>
+        <li>Doula benefit reimbursement — Canada and U.S.</li>
+        <li>Breastfeeding benefits and lactation consulting — Canada and U.S.</li>
+      </ul>
+
+      <strong>Employee Ownership and Savings (Canada):</strong>
+      <ul>
+        <li><strong>Employee Ownership Plan:</strong> TD matches 100% of the first $250 in annual contributions and 50% of further contributions (up to 10% of eligible earnings), up to a maximum TD contribution of 3.5% of eligible earnings or $2,250, whichever comes first. Members must have 2 years of continuous service to vest and be eligible to withdraw TD matching contributions.</li>
+        <li><strong>Employee Future Builder:</strong> Voluntary group savings via payroll deductions, lump sums, or incentive pay deferrals into Group RSP (personal or spousal), TFSA, or both. TD pays program administration fees.</li>
+      </ul>
+
+      <strong>Service Recognition — TD Celebrates Careers:</strong> Enterprise-wide program recognising colleagues on service anniversaries. At 5-year milestones: 10 TD shares. At 10, 15, 20, 25+ year milestones: 10 TD shares or a merchandise gift. At 25 years (and every 5 years thereafter): eligible colleagues also receive a one-week milestone anniversary vacation bonus.
+
+      <strong>Additional Support Programs (all regions unless noted):</strong>
+      <ul>
+        <li>Employee and Family Assistance Program (EFAP) — confidential third-party counselling and referral service.</li>
+        <li>Critical Incident Trauma Response — immediate professional care for traumatic workplace events (robbery, death of a colleague).</li>
+        <li>Virtual medical care program for all benefits-eligible colleagues.</li>
+        <li>Banking Benefits: preferred rates and discounts on home and auto insurance (Canada and U.S.).</li>
+        <li>Colleague discounts on events, attractions, products, and services.</li>
+        <li>Scholarship program for children of TD colleagues (Canada and U.S.).</li>
+        <li>TD Reflect financial well-being tool (Canada): helps colleagues make better-informed financial decisions and avoid scams.</li>
+        <li>Flu shot reimbursement (all regions).</li>
+        <li>Retiree medical and dental benefits for eligible groups subsidised in part by TD (Canada).</li>
+      </ul>
+      <span class="policy-ref">REF: Summary of Benefit Programs (PDF, March 2026)</span>`
+  },
+
+  // ── PUBLIC POLICY & POLITICAL CONTRIBUTIONS ──
+  {
+    keywords: ['public policy','political contributions','lobbying','political activity','government relations','political donation','advocacy'],
+    policy: "Public Policy & Political Contributions",
+    answer: `TD Bank Group's <strong>Public Policy and Political Contributions</strong> statement outlines TD's approach to participating in public policy discussions and making political contributions.
+      <ul>
+        <li><strong>Policy Advocacy:</strong> TD engages with governments, regulators, and industry bodies to advocate for sound public policies that support a strong financial system, economic growth, and TD's customers and shareholders.</li>
+        <li><strong>Political Contributions:</strong> TD makes political contributions in accordance with applicable laws. Where permitted, contributions are disclosed publicly. TD's political contributions reflect its interest in sound governance, not partisan political preferences.</li>
+        <li><strong>Employee Political Activity:</strong> TD respects employees' rights to participate in political activities in their personal capacity. However, employees must ensure that their personal political activities do not create a conflict of interest with their responsibilities at TD, and must not use TD resources (time, equipment, or funds) for personal political activities.</li>
+        <li><strong>Lobbying Compliance:</strong> Where required, TD registers and complies with applicable lobbying disclosure regulations.</li>
+      </ul>
+      <span class="policy-ref">REF: Public Policy and Political Contributions (PDF, 2025)</span>`
+  },
+
+  // ── EXECUTIVE COMPENSATION / HRC ──
+  {
+    keywords: ['executive compensation','hrc','human resources committee','compensation committee','ceo pay','incentive plan','performance pay','deferred compensation','clawback'],
+    policy: "Executive Compensation & HRC",
+    answer: `TD Bank Group's <strong>Role of the Human Resources Committee (HRC), Approach to Executive Compensation, and TD Culture Standard</strong> document explains how TD's Board oversees compensation.
+      <ul>
+        <li><strong>HRC Mandate:</strong> The Human Resources Committee of the Board oversees TD's human resources strategies, policies, and practices, with a particular focus on executive compensation.</li>
+        <li><strong>Compensation Philosophy:</strong> TD's executive compensation is designed to attract and retain top talent, align pay with performance, and discourage excessive risk-taking.</li>
+        <li><strong>Pay-for-Performance:</strong> A significant portion of executive compensation is variable and tied to TD's financial performance and individual performance metrics.</li>
+        <li><strong>Clawback Policy:</strong> TD has a clawback (recovery) policy that allows TD to recoup compensation from executives if financial results are restated or misconduct is discovered.</li>
+        <li><strong>TD Culture Standard:</strong> Executives are assessed not only on financial results but also on how they demonstrate TD's culture values, including integrity, respect, and customer focus.</li>
+        <li><strong>Disclosure:</strong> Executive compensation is disclosed in TD's annual Management Proxy Circular filed with securities regulators.</li>
+      </ul>
+      <span class="policy-ref">REF: Role of HRC, Executive Compensation & TD Culture Standard (PDF, 2025)</span>`
+  },
+
+  // ── ACCESSIBILITY ──
+  {
+    keywords: ['accessibility','accessible','aoda','barrier','accommodation disability','screen reader','assistive technology','accessibility plan'],
+    policy: "Accessibility Plan",
+    answer: `TD Bank Group's <strong>Accessibility Plan</strong> outlines TD's multi-year strategy to identify, prevent, and remove barriers to accessibility for persons with disabilities.
+      <ul>
+        <li><strong>Regulatory Framework:</strong> TD's Accessibility Plan is developed in compliance with the <em>Accessible Canada Act</em> and applicable provincial accessibility legislation including Ontario's AODA.</li>
+        <li><strong>Areas of Focus:</strong> The plan addresses accessibility across employment, built environments, information and communications technology, communications, the design of programs and services, procurement, and transportation.</li>
+        <li><strong>Employment Accessibility:</strong> TD provides accommodations throughout the employment lifecycle — recruitment, onboarding, workplace modifications, and career development — to support employees with disabilities.</li>
+        <li><strong>Digital Accessibility:</strong> TD is working to ensure its digital products, websites, and mobile apps meet WCAG (Web Content Accessibility Guidelines) standards.</li>
+        <li><strong>Customer Accessibility:</strong> TD offers accessible banking services including accessible ATMs, branches, and customer communications in accessible formats.</li>
+        <li><strong>Feedback:</strong> Customers and employees can provide feedback on accessibility barriers through the Accessibility Feedback Process.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Accessibility Plan (PDF)</span>`
+  },
+
+  // ── ALL POLICIES ──
+  {
+    keywords: ['what policies','list of policies','available policies','all policies','policy list','what topics','what can you help','help me with'],
+    policy: "Policy Directory",
+    answer: `Here is a summary of TD Bank Group's key internal policies and governance documents available through this assistant:
+      <ul>
+        <li><strong>Code of Conduct and Ethics</strong> — Jan 2026 full PDF: ethics, gifts, insider trading, reporting (1-866-293-2365)</li>
+        <li><strong>AML, ATF &amp; Sanctions</strong> — Mar 2026: FCRM program, KYC, UTRs, three lines of defence, CAMLO</li>
+        <li><strong>Anti-Corruption — Global ABAC Program</strong> — Mar 2026: zero tolerance, facilitation payments, FCPA, UK Bribery Act</li>
+        <li><strong>Respectful Workplace Policy</strong> — Mar 2026: harassment, discrimination, violence, reporting obligations</li>
+        <li><strong>Health &amp; Safety Policy</strong> — Sep 2025: hazard prevention, committees, incident reporting, emergency preparedness</li>
+        <li><strong>Mental Health in the Workplace</strong> — Mar 2026: EFAP, four pillars, manager training, Well-being Ambassadors</li>
+        <li><strong>Employee Benefit Programs</strong> — Mar 2026: pension rates (Canada/U.S./U.K.), parental leave, ESOP, wellness accounts</li>
+        <li><strong>Fair Pay</strong> — Mar 2026: adjusted pay review results by group, Pay Equity Act compliance, BC transparency</li>
+        <li><strong>Job Transitions</strong> — 2025: advance notice, internal mobility, severance, no-cost outplacement</li>
+        <li><strong>Modern Slavery &amp; Human Trafficking</strong> — Feb 2026: Supplier Code, Project Reclaim, 96 suppliers assessed</li>
+        <li><strong>Privacy Policy — Collection, Use &amp; Disclosure</strong> — PIPEDA, collection, sharing, protection principles</li>
+        <li><strong>Privacy Policy — Customer Rights</strong> — Access requests, correction, automated decisions, complaint resolution</li>
+        <li><strong>Online &amp; Mobile Security</strong> — 100% reimbursement guarantee, IdentificationPlus, VoicePrint, chip &amp; PIN</li>
+        <li><strong>Fraud &amp; Scam Protection</strong> — Phishing, vishing, reporting suspicious activity, card disputes</li>
+        <li><strong>Vulnerability Reporting</strong> — Responsible disclosure process for security vulnerabilities</li>
+        <li><strong>Electronic Communications</strong> — Acceptable use, social media, AI communications, CASL, monitoring</li>
+        <li><strong>Sustainability &amp; ESG</strong> — Net-zero 2050, sustainable financing, PSI, LBG verification</li>
+        <li><strong>Diversity, Equity &amp; Inclusion</strong> — Indigenous, Black communities, women, 2SLGBTQ+, accessibility</li>
+        <li><strong>Corporate Governance</strong> — Board structure, committees, director independence, disclosure</li>
+        <li><strong>Director Independence Policy</strong> — PDF 136 KB: independence criteria, annual assessment, TSX/NYSE</li>
+        <li><strong>Disclosure Policy</strong> — PDF 134 KB: material information, quiet periods, no selective disclosure</li>
+        <li><strong>Majority Voting Policy</strong> — PDF 135 KB: director election rules, 90-day resignation decision</li>
+        <li><strong>Ethics &amp; Conduct Reporting Hotline</strong> — 1-866-293-2365 (24/7), EthicsPoint, anonymous reporting</li>
+        <li><strong>Public Policy &amp; Political Contributions</strong> — Government engagement, employee political activity rules</li>
+        <li><strong>Executive Compensation &amp; HRC</strong> — Board oversight, pay-for-performance, clawback policy</li>
+        <li><strong>Accessibility Plan</strong> — Accessible Canada Act, AODA, WCAG digital standards</li>
+        <li><strong>Corporate Governance Guideline</strong> — PDF 241 KB: Board stewardship, committees, management accountability</li>
+      </ul>
+      <em>Ask about any of these topics for detailed guidance. All entries are sourced directly from official TD PDFs.</em>
+      <span class="policy-ref">Sources: td.com official PDFs — all documents retrieved directly (Jan–Mar 2026)</span>`
+  },
+
+  // ── TD PRIVACY POLICY — COLLECTION, USE & DISCLOSURE ──
+  // Source: https://www.td.com/ca/en/about-td/privacy-and-security/our-privacy-commitments
+  {
+    keywords: ['collect personal information','how td collects','collection of information','share personal information','disclose personal information','use of information','how td uses','how td shares','pipeda','td privacy policy','personal information protection','electronic documents act','information we collect','what information does td','data protection','customer data','data breach','privacy breach','privacy notice'],
+    policy: "TD Privacy Policy — Collection, Use & Disclosure",
+    answer: `The <strong>TD Privacy Policy</strong> governs how TD Bank Group collects, uses, shares, discloses, and protects personal information in Canada. TD's privacy commitments apply when you apply for or use any TD product or service, visit TD websites or apps, or otherwise interact with TD.
+      <ul>
+        <li><strong>How TD Collects Information:</strong> TD collects personal information necessary to provide its products and services. This may include identity information (name, address, SIN), financial information (income, assets, credit history), transaction data, and digital/behavioural data from websites and apps. Additional information may be collected depending on the product or service.</li>
+        <li><strong>How TD Shares Information Within TD:</strong> To manage your total relationship with TD, information is shared internally across TD's affiliates and subsidiaries — including in other countries — except where prohibited by law. This enables TD to serve you more holistically across products.</li>
+        <li><strong>How TD Discloses Information to Third Parties:</strong> TD may disclose your information to credit bureaus, payment networks, government authorities, service providers, and other third parties. Disclosure is limited to what is necessary to deliver the product or service you requested, comply with the law, or manage TD's business and risk. TD does not sell personal information.</li>
+        <li><strong>How TD Protects Information:</strong> TD maintains internal policies and security standards protecting systems and personal information against unauthorized access and use. Information is retained only as long as required, then securely destroyed.</li>
+        <li><strong>How TD Uses Information:</strong> TD uses personal information to deliver and manage products and services, communicate with you, prevent fraud, conduct analytics, personalize experiences online, and meet regulatory obligations.</li>
+        <li><strong>Interacting with TD Online:</strong> When you use TD websites or apps, TD collects information to deliver services, improve and personalize your experience, prevent fraud, and customize advertising on third-party platforms.</li>
+        <li><strong>Consent:</strong> TD obtains consent as required by applicable privacy legislation. Consent may be express or implied depending on the sensitivity of the information and purpose of use.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Privacy Policy (PDF) · td.com/ca/en/about-td/privacy-and-security/our-privacy-commitments</span>`
+  },
+
+  // ── TD PRIVACY POLICY — CUSTOMER RIGHTS ──
+  // Source: https://www.td.com/ca/en/about-td/privacy-and-security/our-privacy-commitments
+  {
+    keywords: ['right to access','access personal information','correct personal information','privacy complaint','privacy question','automated decision','privacy request','customer rights privacy','information request','access my information','view my information','change my information','privacy breach complaint','privacy officer'],
+    policy: "TD Privacy Policy — Customer Rights & Complaint Resolution",
+    answer: `TD's <strong>Privacy Policy</strong> grants customers important rights over their personal information held by TD.
+      <ul>
+        <li><strong>Right of Access:</strong> Upon request, TD will provide customers with access to the personal information it retains about them. Most information is found in transaction records (account statements) accessible via EasyWeb, WebBroker, EasyLine, Green Machine ATMs, or by visiting a branch.</li>
+        <li><strong>How to Request Access:</strong> Customers may contact the branch or office where their account is held, or send a written request. TD will respond within 30 days. A minimal charge may apply for extensive searches.</li>
+        <li><strong>Exceptions to Access:</strong> TD cannot provide information that references other persons, is subject to legal privilege, contains proprietary confidential information, relates to an internal investigation, or cannot be disclosed for legal reasons.</li>
+        <li><strong>Correcting Information:</strong> Customers can request corrections to inaccurate personal information. TD will make corrections and notify any third parties who received the incorrect information and rely on it.</li>
+        <li><strong>Automated Decision Making:</strong> TD uses technology tools to make automated real-time decisions in some cases (e.g., credit applications). TD will notify customers where appropriate and explain how to learn more about the automated decision process.</li>
+        <li><strong>Complaints:</strong> Customers with a privacy question or complaint should first contact TD. If unresolved, a complaint may be escalated to the Office of the Privacy Commissioner of Canada or the relevant provincial privacy commissioner.</li>
+        <li><strong>Contact for Privacy Matters:</strong> Customer Feedback, Toronto-Dominion Centre, P.O. Box 193, Toronto, ON M5K 1H6. Email: customerfeedback@td.com. Fax: 1-877-983-2932.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Privacy Policy · td.com/ca/en/about-td/privacy-and-security/our-privacy-commitments/complaint-resolution</span>`
+  },
+
+  // ── ONLINE & MOBILE SECURITY / SECURITY GUARANTEE ──
+  // Source: https://www.td.com/ca/en/about-td/privacy-and-security/how-we-protect-you/we-protect
+  {
+    keywords: ['online security','mobile security','security guarantee','reimbursement','unauthorized transaction','voiceprint','identificationplus','encryption','firewall','chip card','card security','digital security','how does td protect','td security technology','online banking security','webbroker password','atm security','secure banking','password','pin security','two factor'],
+    policy: "Online & Mobile Security",
+    answer: `TD Bank Group uses extensive security technology to protect customers banking online and via mobile.
+      <ul>
+        <li><strong>TD Online and Mobile Security Guarantee:</strong> If a customer experiences a TD account loss resulting from an unauthorized transaction through a TD online or mobile service, TD will reimburse 100% of those account losses — provided the customer has met their security responsibilities (e.g., safeguarding passwords, not sharing credentials).</li>
+        <li><strong>Firewalls, Encryption & Cookies:</strong> TD uses firewalls, website encryption (TLS/SSL), and controlled cookies to prevent unauthorized access to internal systems and secure data in transit.</li>
+        <li><strong>IdentificationPlus:</strong> TD's IdentificationPlus system provides an additional layer of protection against unauthorized access to online accounts by verifying that the customer is logging in from a recognized device and environment.</li>
+        <li><strong>WebBroker Trading Password:</strong> TD Direct Investing customers have a separate WebBroker trading password providing an additional security level for investment transactions.</li>
+        <li><strong>TD VoicePrint™:</strong> Customers calling EasyLine or TD Direct Investing can enrol in TD VoicePrint, a voice authentication system using over 100 voice characteristics. Once enrolled, customers can skip traditional authentication questions.</li>
+        <li><strong>Chip & PIN Card Security:</strong> TD Canada Trust Access Cards and credit cards use embedded microchip technology storing information in a secure encrypted format that is virtually impossible to copy, providing additional security at ATMs and merchants compared to magnetic stripe.</li>
+        <li><strong>Commercial Cheque Fraud Protection:</strong> TD Commercial Banking offers a web-based Cheque Fraud Protection Service for managing cheques clearing through Canadian dollar and domestic U.S. dollar business accounts.</li>
+        <li><strong>Online Communication Policy:</strong> TD will never send unsolicited emails asking customers or staff to reply with passwords, account numbers, or PINs. Any such request is fraudulent.</li>
+      </ul>
+      <span class="policy-ref">REF: td.com/ca/en/about-td/privacy-and-security/how-we-protect-you/we-protect</span>`
+  },
+
+  // ── FRAUD & SCAM PROTECTION ──
+  // Source: https://www.td.com/ca/en/about-td/privacy-and-security
+  {
+    keywords: ['fraud','scam','phishing','identity theft','suspicious activity','report fraud','fraud protection','suspicious email','debit dispute','credit card dispute','unrecognized transaction','fraudulent','social engineering','impersonation','fraud claim','vishing','smishing','romance scam','investment fraud','unauthorized charge'],
+    policy: "Fraud & Scam Protection",
+    answer: `TD Bank Group is committed to helping customers and staff protect against fraud and scams. Staff play an important role in identifying and escalating suspicious activity.
+      <ul>
+        <li><strong>Common Frauds & Scams:</strong> TD provides guidance on recognizing common fraud types including phishing (fake emails/websites), vishing (phone fraud), smishing (SMS fraud), romance scams, investment fraud, and identity theft. Some scams specifically target youth, seniors, and newcomers to Canada.</li>
+        <li><strong>TD Will Never Ask for Passwords:</strong> TD Bank Group will never send unsolicited emails or messages asking for passwords, account numbers, PINs, or one-time passcodes. Staff must never share customer credentials under any circumstances.</li>
+        <li><strong>Reporting Suspicious Activity — Customers:</strong> If a customer believes they have been impacted by phishing or another type of fraud, or notices unrecognized transactions, they must immediately report it through TD's fraud reporting channel or by calling TD directly.</li>
+        <li><strong>Reporting Suspicious Activity — Staff:</strong> Staff who suspect internal fraud, external fraud targeting customers, or any suspicious financial activity must report it immediately to their manager, Fraud Management, or via the Ethics hotline. AML obligations also apply — suspicious transactions must be escalated per TD's AML/ATF policy.</li>
+        <li><strong>Disputing Debit and Credit Card Charges:</strong> Customers who believe their card has been incorrectly charged or see an unfamiliar transaction can submit a fraud claim or non-fraud dispute for debit or credit cards through TD's dispute process.</li>
+        <li><strong>Online Safety Practices for Staff:</strong> Use unique, complex passwords/passphrases; never share passwords or PINs; use firewalls and anti-virus/anti-malware software with current updates; guard mobile devices; avoid leaving devices unattended.</li>
+        <li><strong>Fintech App Risks:</strong> Customers using third-party financial technology (fintech) apps should be cautious about granting access to TD account credentials. TD provides guidance on understanding how fintechs use your data.</li>
+      </ul>
+      <span class="policy-ref">REF: td.com/ca/en/about-td/privacy-and-security/fraud-protection</span><span class="policy-ref">td.com/ca/en/about-td/privacy-and-security</span>`
+  },
+
+  // ── VULNERABILITY REPORTING ──
+  // Source: https://www.td.com/ca/en/about-td/privacy-and-security/report-vulnerability
+  {
+    keywords: ['vulnerability','report vulnerability','security vulnerability','cyber vulnerability','security flaw','responsible disclosure','bug report','security issue','penetration test','cybersecurity reporting'],
+    policy: "Vulnerability Reporting",
+    answer: `TD Bank Group has a formal process for reporting identified security vulnerabilities in TD's systems, websites, or applications.
+      <ul>
+        <li><strong>Responsible Disclosure:</strong> TD encourages responsible disclosure of security vulnerabilities discovered in its digital assets. This means privately notifying TD before any public disclosure, giving TD the opportunity to investigate and remediate.</li>
+        <li><strong>How to Report:</strong> Identified vulnerabilities should be reported through TD's official vulnerability reporting channel as described at td.com/ca/en/about-td/privacy-and-security/report-vulnerability. Do not exploit, access data beyond what is needed to confirm the vulnerability, or disclose the vulnerability publicly before TD has had reasonable time to address it.</li>
+        <li><strong>Scope:</strong> Reports should include the type of vulnerability, affected URL or system, and a detailed description allowing TD's security team to reproduce and assess the issue.</li>
+        <li><strong>Staff Responsibilities:</strong> TD employees who discover or suspect a security vulnerability in any TD system must report it immediately to their manager and the Information Security team. Do not attempt to exploit or probe the vulnerability further.</li>
+        <li><strong>Non-Retaliation:</strong> TD does not pursue legal action against researchers or individuals who report vulnerabilities in good faith in accordance with TD's responsible disclosure guidelines.</li>
+      </ul>
+      <span class="policy-ref">REF: td.com/ca/en/about-td/privacy-and-security/report-vulnerability</span>`
+  },
+
+  // ── DIRECTOR INDEPENDENCE POLICY ──
+  // Source: https://www.td.com/ca/en/about-td/corporate-profile/other-governance-policies
+  {
+    keywords: ['director independence','independent director','board independence','non-executive director','director independence policy','board composition','related party director'],
+    policy: "Director Independence Policy",
+    answer: `TD's <strong>Director Independence Policy</strong> (PDF, 136 KB) establishes the criteria used to assess whether a member of TD's Board of Directors qualifies as independent.
+      <ul>
+        <li><strong>Purpose:</strong> Director independence is essential to objective Board oversight of management. The policy ensures a majority of TD's Board members are free from relationships or interests that could compromise their independent judgment.</li>
+        <li><strong>Independence Criteria:</strong> A director is considered independent if they have no direct or indirect material relationship with TD — financial, commercial, industrial, banking, consulting, legal, accounting, charitable, or other — that could, in the view of the Board, reasonably be expected to interfere with the exercise of the director's independent judgment.</li>
+        <li><strong>Assessment Process:</strong> The Corporate Governance Committee of the Board reviews each director's independence annually, considering all known relationships and potential conflicts. Directors are required to promptly disclose any circumstances that could affect their independence.</li>
+        <li><strong>Regulatory Compliance:</strong> The policy is designed to comply with the independence requirements of the Canada Business Corporations Act, OSFI guidelines, and applicable stock exchange listing standards (TSX and NYSE).</li>
+      </ul>
+      <span class="policy-ref">REF: Director Independence Policy (PDF, 136 KB) · td.com/ca/en/about-td/corporate-profile/other-governance-policies</span>`
+  },
+
+  // ── DISCLOSURE POLICY ──
+  // Source: https://www.td.com/ca/en/about-td/corporate-profile/other-governance-policies
+  {
+    keywords: ['disclosure policy','material information','material disclosure','insider information','selective disclosure','continuous disclosure','timely disclosure','investor disclosure','press release disclosure','securities disclosure','quiet period','blackout period','earnings announcement','sedar','material non-public'],
+    policy: "Disclosure Policy",
+    answer: `TD's <strong>Disclosure Policy</strong> (PDF, 134 KB) governs how TD communicates material information to shareholders, analysts, regulators, and the public.
+      <ul>
+        <li><strong>Purpose:</strong> To ensure that material information about TD is disclosed to the public in a timely, accurate, complete, and broadly accessible manner, in compliance with applicable securities laws including continuous disclosure obligations under National Instrument 51-102.</li>
+        <li><strong>Material Information:</strong> Information is material if a reasonable investor would consider it important in making an investment decision, or if it would reasonably be expected to have a significant effect on the market price of TD's securities.</li>
+        <li><strong>Authorised Spokespersons:</strong> Only designated authorised spokespersons may communicate material non-public information about TD to external parties. All other employees must refer external inquiries to Investor Relations or Corporate Communications.</li>
+        <li><strong>No Selective Disclosure:</strong> TD does not selectively disclose material non-public information to any individual analyst, investor, or group. Material information is released publicly first (e.g., via press release or SEDAR+ filing).</li>
+        <li><strong>Quiet Periods:</strong> TD observes quiet periods prior to quarterly earnings announcements during which management generally does not comment on financial results or expectations.</li>
+        <li><strong>Employees:</strong> Staff who become aware of material non-public information about TD must not trade in TD securities (insider trading rules apply) and must not disclose such information to anyone outside TD without authorisation.</li>
+      </ul>
+      <span class="policy-ref">REF: Disclosure Policy (PDF, 134 KB) · td.com/ca/en/about-td/corporate-profile/other-governance-policies</span>`
+  },
+
+  // ── MAJORITY VOTING POLICY ──
+  // Source: https://www.td.com/ca/en/about-td/corporate-profile/other-governance-policies
+  {
+    keywords: ['majority voting','director election','shareholder vote','withheld votes','director resignation','vote for directors','uncontested election'],
+    policy: "Majority Voting Policy",
+    answer: `TD's <strong>Majority Voting Policy</strong> applies to uncontested elections of directors at TD's Annual Meeting of Shareholders.
+      <ul>
+        <li><strong>Core Principle:</strong> Each director nominated for election in an uncontested election must receive more votes "for" than votes "withheld" to be elected to the Board.</li>
+        <li><strong>Resignation Obligation:</strong> If a director receives more "withheld" votes than "for" votes in an uncontested election, that director must promptly tender their resignation to the Chair of the Board.</li>
+        <li><strong>Board Decision:</strong> The Corporate Governance Committee will consider the resignation and recommend to the Board whether to accept it. The Board will make a decision within 90 days of the shareholders' meeting and disclose its decision publicly.</li>
+        <li><strong>Contested Elections:</strong> This policy does not apply to contested director elections, where plurality voting applies in accordance with the Canada Business Corporations Act.</li>
+      </ul>
+      <span class="policy-ref">REF: Majority Voting Policy (PDF, 135 KB) · td.com/ca/en/about-td/corporate-profile/other-governance-policies</span>`
+  },
+
+  // ── ETHICS REPORTING HOTLINE ──
+  // Source: https://www.td.com/ca/en/about-td/corporate-profile/other-governance-policies
+  {
+    keywords: ['ethics hotline','ethics reporting','conduct hotline','report misconduct','whistleblower','report a concern','report violation','report ethics','td ethics','anonymous report','confidential report','report wrongdoing','hotline','raise a concern','internal report'],
+    policy: "TD Ethics & Conduct Reporting",
+    answer: `TD Bank Group operates a confidential <strong>Conduct and Ethics Reporting</strong> process that allows employees, directors, and third parties to raise concerns about potential violations of TD's Code of Conduct and Ethics, accounting irregularities, internal controls, or other governance matters.
+      <ul>
+        <li><strong>How to Report:</strong> Concerns may be reported through a manager, HR, Legal, or Compliance. Alternatively, TD operates a confidential Ethics Reporting Hotline that allows anonymous reporting. The hotline is operated by an independent third party and is available 24/7.</li>
+        <li><strong>What to Report:</strong> Violations or suspected violations of the Code of Conduct and Ethics; fraud, theft, or financial misconduct; concerns about accounting, auditing, or internal financial controls; harassment, discrimination, or workplace misconduct; AML/ATF concerns; bribery or corruption; data privacy breaches; and any other serious policy violations.</li>
+        <li><strong>Confidentiality:</strong> Reports can be made anonymously. TD does not permit the identification of anonymous reporters, and any information that could identify the reporter is handled with strict confidentiality.</li>
+        <li><strong>Non-Retaliation:</strong> TD strictly prohibits retaliation against any employee who makes a good-faith report of a concern. Retaliation is itself a serious disciplinary offence.</li>
+        <li><strong>Investigation:</strong> All reports are taken seriously and investigated appropriately. Substantiated violations may result in disciplinary action, up to and including termination and referral to law enforcement.</li>
+        <li><strong>Proxy Access:</strong> TD also has a Proxy Access Policy allowing eligible shareholders to include their director nominees in TD's management proxy circular under specified conditions.</li>
+      </ul>
+      <span class="policy-ref">REF: TD Conduct and Ethics Hotline · td.com/ca/en/about-td/corporate-profile/td-conduct-and-ethics-hotline</span><span class="policy-ref">Code of Conduct and Ethics (PDF, 2025)</span>`
+  },
+
+  // ── ELECTRONIC COMMUNICATIONS ──
+  // Source: https://www.td.com/ca/en/about-td/privacy-and-security/options-for-electronic-communications/options
+  {
+    keywords: ['electronic communications','email communications','paperless','e-statements','digital statements','communication preferences','opt out email','unsubscribe','marketing communications','electronic messages'],
+    policy: "Electronic Communications",
+    answer: `TD provides customers and staff with options for managing how TD communicates electronically.
+      <ul>
+        <li><strong>Electronic Statements & Documents:</strong> Customers can opt into receiving account statements, notices, and other documents electronically (paperless) rather than by mail. This applies to most TD accounts and products.</li>
+        <li><strong>Marketing Communications:</strong> Customers may update their preferences regarding marketing and promotional electronic messages from TD at any time. TD complies with Canada's Anti-Spam Legislation (CASL) for all commercial electronic messages.</li>
+        <li><strong>How to Update Preferences:</strong> Customers can update their electronic communication preferences by logging into EasyWeb or the TD app, visiting a branch, or calling TD directly.</li>
+        <li><strong>TD Will Not Request Sensitive Information by Email:</strong> TD will never send unsolicited emails requesting passwords, PINs, account numbers, or Social Insurance Numbers. Staff must advise customers accordingly and report any suspicious emails purporting to be from TD.</li>
+        <li><strong>Staff Obligations:</strong> Employees using electronic communications in the course of their work must comply with TD's acceptable use policies, the Code of Conduct, and applicable privacy laws. Business communications using TD systems are subject to monitoring in accordance with TD's policies.</li>
+      </ul>
+      <span class="policy-ref">REF: td.com/ca/en/about-td/privacy-and-security/options-for-electronic-communications/options</span>`
+  },
+
+  // ── CORPORATE GOVERNANCE GUIDELINE ──
+  // Source: https://www.td.com/ca/en/about-td/corporate-profile/other-governance-policies
+  {
+    keywords: ['corporate governance guideline','board responsibilities','management responsibilities','governance standard','board oversight','stewardship','board mandate','constating documents','governance practices disclosure'],
+    policy: "Corporate Governance Guideline",
+    answer: `TD's <strong>Corporate Governance Guideline</strong> (PDF, 241 KB) outlines the governance framework within which TD's Board of Directors and management operate.
+      <ul>
+        <li><strong>Board Stewardship:</strong> The Board is responsible for the stewardship of TD, including oversight of strategic planning, risk management, capital allocation, management performance, and corporate culture.</li>
+        <li><strong>Board Committees:</strong> The Board operates through standing committees — Audit, Risk Management, Human Resources, and Corporate Governance — each with a specific mandate to support the full Board's oversight responsibilities.</li>
+        <li><strong>Management Accountability:</strong> The President and CEO is responsible for the day-to-day management of TD within the parameters established by the Board. Management is accountable to the Board for the performance of the Bank.</li>
+        <li><strong>Strategic Planning:</strong> The Board reviews and approves TD's strategic plan annually, monitoring progress against strategic objectives throughout the year.</li>
+        <li><strong>Risk Oversight:</strong> The Board oversees TD's enterprise-wide risk management framework, ensuring appropriate risk identification, measurement, monitoring, and mitigation processes are in place.</li>
+        <li><strong>Succession Planning:</strong> The Board oversees CEO and senior leadership succession planning to ensure continuity of strong leadership.</li>
+        <li><strong>Governance Disclosure:</strong> TD discloses its governance practices annually in its Management Proxy Circular, including an assessment of compliance with applicable governance standards and any deviations therefrom.</li>
+      </ul>
+      <span class="policy-ref">REF: Corporate Governance Guideline (PDF, 241 KB) · td.com/ca/en/about-td/corporate-profile/other-governance-policies</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — CHEQUING ACCOUNTS
+  // Source: td.com/ca/en/personal-banking/products/bank-accounts/chequing-accounts
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['chequing account','chequing','checking account','all-inclusive banking plan','unlimited chequing','every day chequing','minimum chequing','student chequing','bank account','daily banking','transactional account','debit card','direct deposit','overdraft','monthly fee waiver','minimum balance','open account','bill payment','etransfer','interac','atm withdrawal','pre-authorized','joint account'],
+    policy: 'TD Chequing Accounts',
+    answer: `TD offers a range of <strong>personal chequing accounts</strong> for everyday banking. A chequing account lets you make deposits, withdrawals, purchases, bill payments, pre-authorized payments, and Interac e-Transfer transactions. All TD chequing accounts come with a debit card.
+
+      <strong>Available TD Chequing Accounts:</strong>
+      <ul>
+        <li><strong>TD All-Inclusive Banking Plan — $30.95/month</strong> (waived with $6,000+ daily balance): Unlimited banking transactions and premium benefits. Annual fee rebate on select TD credit cards (up to $139). Free cheques, drafts, and more. <em>Current offer: Get up to $750 in value. Conditions apply.</em></li>
+        <li><strong>TD Unlimited Chequing Account — $17.95/month</strong> (waived with $4,000+ daily balance): Unlimited transactions. No TD ATM fee at any ATM in Canada. Free Interac e-Transfer transactions. Annual fee rebate for first year on select TD credit cards (up to $139). <em>Current offer: Get up to $750 in value. Conditions apply.</em></li>
+        <li><strong>TD Every Day Chequing Account — $11.95/month</strong> (waived with $3,000+ daily balance): 25 transactions per month plus unlimited public transit transactions. Free Interac e-Transfer transactions.</li>
+        <li><strong>TD Minimum Chequing Account — $3.95/month</strong>: 12 transactions per month (including up to 2 full-serve transactions) plus unlimited public transit transactions. <em>No monthly fee for:</em> Guaranteed Income Supplement recipients, RDSP beneficiaries, Indigenous Peoples from Canada, and Newcomers to Canada (first year).</li>
+        <li><strong>TD Student Chequing Account — $0/month</strong>: Unlimited transactions. No monthly fee for youth and students (until age 23, or with proof of full-time post-secondary enrollment). No monthly fee for Overdraft Protection. Free Interac e-Transfer transactions. <em>Current offer: Get up to $125. Conditions apply.</em></li>
+      </ul>
+
+      <strong>Key Features Across TD Chequing Accounts:</strong>
+      <ul>
+        <li><strong>Opening an Account:</strong> Most accounts can be opened online in under 5 minutes. You need a valid email address, employer information, and a valid passport or Canadian driver's licence.</li>
+        <li><strong>Waiving Monthly Fees:</strong> Maintain the minimum daily balance at the end of each day of the month to waive fees on the All-Inclusive, Unlimited, and Every Day accounts.</li>
+        <li><strong>Direct Deposit:</strong> Set up to have employer and government payments deposited directly into your account — convenient, reliable, and secure.</li>
+        <li><strong>TD Mobile Deposit:</strong> Use the TD App to photograph and deposit cheques without visiting a branch.</li>
+        <li><strong>TD MySpend:</strong> Paired with the TD App, tracks monthly spending to help manage cashflow.</li>
+        <li><strong>Online & Mobile Banking:</strong> Manage accounts via EasyWeb or the TD App from anywhere.</li>
+        <li><strong>Overdraft Protection:</strong> Available on most accounts. Amount in overdraft is subject to 21% per annum interest rate.</li>
+        <li><strong>Closing an Account:</strong> Visit any TD branch or call TD EasyLine at 1-888-663-3279.</li>
+        <li><strong>CDIC Member:</strong> Eligible deposits are insured by the Canada Deposit Insurance Corporation.</li>
+      </ul>
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/products/bank-accounts/chequing-accounts</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — SAVINGS ACCOUNTS
+  // Source: td.com/ca/en/personal-banking/products/bank-accounts/savings-accounts
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['savings account','savings','save money','epremium savings','growth savings','every day savings','interest rate savings','automate savings','simply save','pre-authorized transfer','no monthly fee savings','high interest','tiered interest','boosted rate','compound interest','savings goal','emergency fund'],
+    policy: 'TD Savings Accounts',
+    answer: `TD offers <strong>personal savings accounts</strong> designed to help you achieve short, medium, and long-term goals. All TD savings accounts have <strong>$0 monthly fee</strong>. Interest is calculated daily based on the closing balance and paid to your account on the last business day of each month.
+
+      <strong>Available TD Savings Accounts:</strong>
+      <ul>
+        <li><strong>TD ePremium Savings Account:</strong> Save more with a higher interest rate on balances of $10,000 or more. Unlimited free online transfers to other TD deposit accounts. Best for customers with larger balances who prefer online-only transfers.</li>
+        <li><strong>TD Growth™ Savings Account:</strong> Tiered interest rates for higher balances. Eligible TD Chequing customers (TD Unlimited Chequing, TD All-Inclusive Banking Plan, or TD Wealth Private Banking Chequing) can earn a <strong>Boosted Rate</strong> on balances of $5,000 or more by completing any 2 of 3 Qualifying Monthly Transactions (Direct Deposit from employer/government, Online Bill Payment through EasyWeb/TD App, or Pre-Authorized Debit) each month. Unlimited free transfers to all TD deposit accounts.</li>
+        <li><strong>TD Every Day Savings Account:</strong> Every dollar earns interest calculated daily. 1 transaction per month. Ideal for starting out or wanting frequent access to funds.</li>
+      </ul>
+
+      <strong>Automated Savings Tools:</strong>
+      <ul>
+        <li><strong>Simply Save Program:</strong> Automatically saves a small amount every time you use your TD Access Card for debit purchases or ATM withdrawals.</li>
+        <li><strong>Pre-Authorized Transfer Service:</strong> Automatically transfers funds to your savings account on a schedule you choose (daily, weekly, or monthly).</li>
+      </ul>
+
+      <strong>How to Open:</strong> Open online via the TD Bank Accounts page in under 5 minutes. Existing TD customers can open savings accounts through EasyWeb (select "Add Accounts & Services") or the TD App ("Get An Account"). You can also open at any TD branch with valid government-issued photo ID.
+
+      <strong>Interest Calculation:</strong> Interest is calculated each day based on your account's daily closing balance and paid monthly on the last business day of the month.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/products/bank-accounts/savings-accounts</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — CREDIT CARDS
+  // Source: td.com/ca/en/personal-banking/products/credit-cards
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['credit card','td credit card','aeroplan card','aeroplan visa','first class travel','cash back visa','td rewards','travel rewards','no annual fee card','low rate card','us dollar visa','visa infinite','visa platinum','credit card interest','annual fee','credit card points','aeroplan points','td rewards points','cash back dollars','credit card welcome bonus','credit card offer','apply credit card','credit card benefits','airport lounge','nexus credit','checked bag','birthday bonus'],
+    policy: 'TD Credit Cards',
+    answer: `TD offers a comprehensive range of <strong>credit cards</strong> to suit different needs. All are Visa credit cards. Purchase interest rate is generally <strong>21.99%</strong> and Cash Advance rate is <strong>22.99%</strong> unless otherwise specified.
+
+      <strong>Featured TD Credit Cards:</strong>
+      <ul>
+        <li><strong>TD® Aeroplan® Visa Infinite* Card — $139 annual fee:</strong> Earn Aeroplan points on every purchase. <em>Current offer (as of Jan 13, 2026):</em> Up to $1,350 in value including up to 40,000 Aeroplan points (10,000 Welcome Bonus on first purchase + 15,000 Additional Bonus on $7,500 spend within 180 days + 15,000 Anniversary Bonus on $12,000 spend within 365 days). Annual fee rebate for first year for primary and additional cardholders. Benefits include: free first checked bag on Air Canada for primary/additional cardholder and up to 8 companions; NEXUS fee statement credit (up to $100 CAD per cardholder). Points value estimated at $0.02/point for flight redemptions.</li>
+        <li><strong>TD First Class Travel® Visa Infinite* Card — $139 annual fee:</strong> Earn TD Rewards Points redeemable through Expedia For TD. <em>Current offer (as of Sep 4, 2025):</em> Up to $1,400 in value including up to 165,000 TD Rewards Points (20,000 Welcome Bonus on first purchase + 145,000 Additional Bonus on $7,500 spend within 180 days). Annual fee rebate for first year. Benefits include: $100 TD Travel Credit on first eligible travel purchase of $500+ at Expedia For TD; TD Rewards Birthday Bonus (10% of points earned in prior 12 months, up to 10,000 points); Visa Airport Companion Program (DragonPass membership). 200 TD Rewards Points = $1 in travel savings at Expedia For TD.</li>
+        <li><strong>TD Cash Back Visa Infinite* Card — $139 annual fee:</strong> Earn cash back on everyday purchases. <em>Current offer (as of Apr 30, 2025):</em> Up to $600 in value including 10% Cash Back Dollars in first 3 months on eligible purchases up to $3,500 total spend. Annual fee rebate for first year for primary and first additional cardholder. Ongoing earn rate: 3% Cash Back on eligible groceries, gas/EV charging, public transit, recurring bill payments, streaming/digital gaming/media (up to $15,000 annual cap per category); 1% on all other purchases. Includes Deluxe TD Auto Club membership (24/7 emergency roadside assistance).</li>
+      </ul>
+
+      <strong>Other TD Credit Card Types:</strong>
+      <ul>
+        <li><strong>Aeroplan Cards:</strong> Aeroplan Visa Infinite, Aeroplan Visa Platinum, Aeroplan Visa Infinite Privilege</li>
+        <li><strong>TD Travel Rewards Cards:</strong> First Class Travel Visa Infinite, Platinum Travel Visa</li>
+        <li><strong>Cash Back Cards:</strong> Cash Back Visa Infinite, Cash Back Visa</li>
+        <li><strong>No Annual Fee Cards:</strong> TD Rewards Visa, TD Green Visa</li>
+        <li><strong>Low Rate Cards:</strong> TD Low Rate Visa (lower interest rate option)</li>
+        <li><strong>U.S. Dollar Card:</strong> TD U.S. Dollar Visa Card (for U.S. dollar purchases)</li>
+        <li><strong>Student Cards:</strong> Available for eligible students</li>
+        <li><strong>New to Canada Cards:</strong> Available without Canadian credit history</li>
+      </ul>
+
+      <strong>Credit Card Management Features:</strong>
+      <ul>
+        <li><strong>TD Payment Plans:</strong> Turn purchases of $100 or more into 6, 12, or 18-month payment plans.</li>
+        <li><strong>Additional Cardholders:</strong> Add up to 3 additional cardholders to your account.</li>
+        <li><strong>Pre-Authorized Payments:</strong> Set up automatic bill payments on your credit card.</li>
+        <li><strong>Card Controls (TD App):</strong> Set transaction limits, block international purchases, or lock your credit card.</li>
+        <li><strong>Mobile Wallet:</strong> Add your TD credit card to Apple Pay, Google Pay, and other digital wallets.</li>
+        <li><strong>TD Fraud Alerts:</strong> Text message alerts when suspicious activity is detected (requires Canadian mobile number and mailing address on file).</li>
+        <li><strong>Credit Score Check:</strong> Free credit score check via TransUnion CreditView® Dashboard in the TD App — does not affect your credit score.</li>
+      </ul>
+
+      <strong>Important:</strong> Credit cards are subject to credit approval. Annual interest rates and fees are current as of January 13, 2026 and subject to change. Aeroplan points are issued and governed by Air Canada's Aeroplan program terms and conditions.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/products/credit-cards</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — MORTGAGES
+  // Source: td.com/ca/en/personal-banking/products/mortgages
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['mortgage','home loan','first home','buy a house','buy a home','first time home buyer','mortgage rate','fixed mortgage','variable mortgage','mortgage renewal','refinance','heloc','home equity flexline','home equity line of credit','mortgage pre-approval','mortgage stress test','down payment','td mortgage','mortgage specialist','mortgage cashback','mortgage offer','mortgage protection','amortization','closed mortgage','open mortgage','second home','switch mortgage'],
+    policy: 'TD Mortgages',
+    answer: `TD offers a range of <strong>mortgage options</strong> whether you're buying your first home, renewing, refinancing, or investing in property.
+
+      <strong>TD Mortgage Types:</strong>
+      <ul>
+        <li><strong>Fixed Rate Closed Mortgage:</strong> Interest rate locked for the term. Available in terms including 3-year and 5-year. Special discounted rates available off posted rates (only for new first-priority mortgages on already-built, owner-occupied properties with amortization of 25 years or less, subject to credit approval). Pre-approved rate held for 120 days.</li>
+        <li><strong>Variable Rate Closed Mortgage:</strong> Interest rate changes whenever the TD Mortgage Prime Rate changes. Also available in 5-year term.</li>
+        <li><strong>Fixed Rate High-Ratio Mortgage:</strong> Available for customers with less than 20% down payment purchasing a residential property valued under $1,500,000 who are eligible for and purchase mortgage default insurance.</li>
+        <li><strong>Open Mortgage:</strong> Pay up to 100% of the principal without prepayment charges. Higher rate flexibility.</li>
+        <li><strong>TD Home Equity FlexLine (HELOC):</strong> A home equity line of credit that lets you borrow against the equity in your home. Access funds as needed, repay, and borrow again.</li>
+      </ul>
+
+      <strong>Key Mortgage Features:</strong>
+      <ul>
+        <li><strong>Prepayment Flexibility:</strong> Pay up to 15% of the principal amount annually on a closed mortgage without prepayment charges. Option to skip the equivalent of one monthly payment if needed (conditions apply; interest continues to accrue).</li>
+        <li><strong>Current Special Offer:</strong> Get up to $5,100 cashback with a new TD mortgage. Offer expires August 31, 2026. Conditions apply.</li>
+        <li><strong>TD Mortgage Protection:</strong> Optional insurance that can help pay off or reduce the outstanding balance on a TD Mortgage if you pass away or suffer a covered critical illness.</li>
+        <li><strong>Mortgage Pre-Approval:</strong> TD can hold your rate for 120 days with a pre-approved mortgage.</li>
+        <li><strong>Stress Test:</strong> Canada's mortgage qualification rules (stress test) may affect your qualification. Ask a TD Mortgage Specialist for details.</li>
+        <li><strong>APR Basis:</strong> The Annual Percentage Rate (APR) is based on a $300,000 mortgage, 25-year amortization, for the applicable term assuming monthly payments and a $300 property valuation fee.</li>
+      </ul>
+
+      <strong>Who Can Help:</strong>
+      <ul>
+        <li><strong>TD Mortgage Direct:</strong> Answer a few questions online and TD will call you to match you with a TD Mortgage Specialist.</li>
+        <li><strong>TD Mortgage Specialist:</strong> Provides personalized advice for your home purchase or refinancing. Available at branches and by appointment.</li>
+        <li><strong>Mortgage Calculators:</strong> TD Mortgage Payment Calculator and TD Mortgage Affordability Calculator available at td.com.</li>
+      </ul>
+
+      <strong>Mortgage Scenarios TD Supports:</strong> First-time home buyers, buying a second/next property, mortgage renewal, refinancing, switching to TD from another lender, newcomers to Canada, and home equity access.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/products/mortgages</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — BORROWING (LOANS & LINES OF CREDIT)
+  // Source: td.com/ca/en/personal-banking/products/borrowing
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['personal loan','line of credit','borrow money','rsp loan','vehicle loan','car loan','auto loan','student line of credit','professional student line','healthcare student line','investment secured line','debt consolidation','overdraft protection','personal line of credit','home equity line','loan vs line of credit','credit score','credit history','borrow','loan payment','line of credit interest','borrowing needs'],
+    policy: 'TD Borrowing — Loans & Lines of Credit',
+    answer: `TD offers a range of <strong>borrowing options</strong> — personal loans and lines of credit — to help you cover everything from a car purchase to school expenses, debt consolidation, renovations, or unexpected expenses.
+
+      <strong>TD Loans:</strong>
+      <ul>
+        <li><strong>Personal Loan:</strong> A lump sum with a fixed or variable interest rate and set repayment schedule. Good for a specific, defined need (buying a car, paying for a major expense). Payment frequency options: weekly, bi-weekly, semi-monthly, or monthly.</li>
+        <li><strong>RSP Loan:</strong> Borrow to contribute to your RRSP and maximize your tax deduction. Subject to credit approval.</li>
+        <li><strong>Vehicle Loan (Auto Loan):</strong> Finance a new or used car or truck. Use the TD Vehicle Loan Calculator to estimate monthly payments.</li>
+      </ul>
+
+      <strong>TD Lines of Credit:</strong>
+      <ul>
+        <li><strong>Personal Line of Credit:</strong> Flexible borrowing — access funds up to your credit limit any time, repay, and borrow again. You only pay interest on what you use. Good for ongoing or uncertain borrowing needs.</li>
+        <li><strong>Investment Secured Line of Credit:</strong> A line of credit secured by your investment portfolio, generally offering a lower interest rate.</li>
+        <li><strong>Home Equity Line of Credit (HELOC) / TD Home Equity FlexLine:</strong> Borrow against your home equity. Generally lower rates as it is secured by your home.</li>
+        <li><strong>TD Line of Credit Protection:</strong> Optional insurance that can help pay off or reduce the outstanding balance on a TD Line of Credit (up to $1,000,000) if you pass away or suffer a covered critical illness.</li>
+      </ul>
+
+      <strong>Student Borrowing:</strong>
+      <ul>
+        <li><strong>Student Line of Credit:</strong> Flexible credit for full-time students to help cover tuition, books, and living expenses.</li>
+        <li><strong>Professional Student Line of Credit:</strong> Higher credit limits for students in professional programs (law, MBA, etc.).</li>
+        <li><strong>Healthcare Student Line of Credit:</strong> Designed for medical, dental, and veterinary students.</li>
+      </ul>
+
+      <strong>Key Concepts:</strong>
+      <ul>
+        <li><strong>Loan vs. Line of Credit:</strong> A loan provides a lump sum upfront with a set repayment schedule. A line of credit provides flexible access to funds up to a limit — you pay interest only on what you use and credit becomes available again once repaid.</li>
+        <li><strong>Debt Consolidation:</strong> Combining multiple higher-interest debts into one lower-interest loan can reduce monthly payments and total interest paid.</li>
+        <li><strong>Credit Score:</strong> Check your credit score free via the TransUnion CreditView® Dashboard in the TD App — checking does not affect your score. A good credit history (consistent on-time minimum payments) makes it easier to get approved for credit.</li>
+        <li><strong>Credit Application Guide:</strong> TD provides a step-by-step credit application guide at td.com.</li>
+      </ul>
+
+      <strong>Tools:</strong> TD Loan/Line of Credit Calculator, Debt Consolidation Loan Calculator, Vehicle Loan Calculator — all available at td.com. Book an appointment at a TD branch or call 1-866-222-3456.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/products/borrowing</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — INVESTING (TFSA, RRSP, FHSA, RESP, RRIF, RDSP, GIC, MUTUAL FUNDS)
+  // Source: td.com/ca/en/personal-banking/personal-investing
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['tfsa','tax free savings account','rrsp','registered retirement savings plan','fhsa','first home savings account','resp','registered education savings plan','rrif','registered retirement income fund','rdsp','registered disability savings plan','gic','guaranteed investment certificate','mutual fund','investing','personal investing','investment plan','registered plan','compound interest','investment account','resp calculator','rrsp calculator','tfsa calculator','gic rate','mutual fund td','td direct investing','td wealth advisor','precious metals investing'],
+    policy: 'TD Personal Investing',
+    answer: `TD offers a comprehensive range of <strong>personal investing products</strong> through registered plans, investment products, and professional advice options.
+
+      <strong>Registered Accounts & Plans:</strong>
+      <ul>
+        <li><strong>TFSA — Tax-Free Savings Account:</strong> Contributions are not tax-deductible, but investment growth and withdrawals are completely tax-free. Contribution room accumulates each year ($7,000 for 2024). Use the TD TFSA Calculator to plan your savings.</li>
+        <li><strong>RRSP — Registered Retirement Savings Plan:</strong> Contributions are tax-deductible (reducing current taxable income). Growth is tax-deferred until withdrawal. Contributions must be made by 60 days after year-end to claim for the prior tax year. Must be converted to a RRIF or annuity by age 71.</li>
+        <li><strong>FHSA — First Home Savings Account:</strong> A registered plan that lets eligible first-time home buyers save up to $40,000 (lifetime limit, $8,000/year) tax-free toward a first home. Contributions are tax-deductible and qualifying withdrawals are tax-free.</li>
+        <li><strong>RESP — Registered Education Savings Plan:</strong> Save for a child's post-secondary education. The federal government contributes through the Canada Education Savings Grant (CESG) — 20% on the first $2,500 of contributions per year (up to $500/year, $7,200 lifetime per beneficiary). Use the TD RESP Calculator.</li>
+        <li><strong>RRIF — Registered Retirement Income Fund:</strong> Convert your RRSP to a RRIF (required by age 71) and receive minimum annual payments. Funds continue to grow tax-deferred.</li>
+        <li><strong>RDSP — Registered Disability Savings Plan:</strong> A long-term savings plan for Canadians with disabilities (eligible for the Disability Tax Credit). Government may contribute through the Canada Disability Savings Grant and Bond.</li>
+      </ul>
+
+      <strong>Investment Products:</strong>
+      <ul>
+        <li><strong>GICs — Guaranteed Investment Certificates:</strong> Earn a guaranteed fixed interest rate for a set term. CDIC-insured eligible deposits. Use the TD GIC Selector Tool to find the right GIC.</li>
+        <li><strong>Mutual Funds:</strong> Professionally managed diversified investment funds covering various asset classes and risk profiles. TD offers a broad suite of mutual funds through TD Investment Services Inc. (regulated by CIRO).</li>
+        <li><strong>Precious Metals:</strong> Buy and sell gold, silver, and platinum coins and bars through TD's Retail Precious Metals Desk, available online and in-branch.</li>
+      </ul>
+
+      <strong>Other Ways to Invest:</strong>
+      <ul>
+        <li><strong>TD Direct Investing:</strong> Self-directed investing platform for buying and selling stocks, ETFs, options, bonds, and more. Tools available through WebBroker and EasyTrade.</li>
+        <li><strong>TD Wealth Advisor:</strong> Goals-based financial planning and personalized advice from a TD Wealth advisor, including financial planning, private wealth management, and more.</li>
+      </ul>
+
+      <strong>Planning Tools Available:</strong> Compound Interest Calculator, TFSA Calculator, RRSP Calculator, RESP Calculator, GIC Selector Tool, Net Worth Calculator, TD Goal Builder, Personal Cash Flow Calculator — all at td.com.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/personal-investing</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — INSURANCE (TD PROTECTION PLANS & TRAVEL INSURANCE)
+  // Source: td.com/ca/en/personal-banking/products/insurance
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['td insurance','mortgage protection','line of credit protection','loan protection','credit card payment protection','travel insurance','travel medical insurance','trip cancellation','trip interruption','single trip','annual trip plan','insurance claim','critical illness insurance','life insurance td','protection plan','travel insurance claim'],
+    policy: 'TD Protection Plans & Travel Insurance',
+    answer: `TD offers <strong>credit protection insurance</strong> and <strong>travel insurance</strong> products to help protect you and your family financially.
+
+      <strong>TD Credit Protection Plans:</strong>
+      <ul>
+        <li><strong>TD Mortgage Protection:</strong> Optional insurance that can help pay off or reduce your TD Mortgage outstanding balance if you pass away or suffer a covered critical illness. Underwritten by The Canada Life Assurance Company (life and critical illness); accidental dismemberment by TD Life Insurance Company.</li>
+        <li><strong>TD Line of Credit Protection:</strong> Can help pay off or reduce your TD Line of Credit outstanding balance (up to $1,000,000) if you pass away or suffer a covered critical illness.</li>
+        <li><strong>TD Loan Protection:</strong> Helps protect your TD loan payments if you experience a covered life event.</li>
+        <li><strong>TD Credit Card Payment Protection Plan:</strong> Helps cover minimum credit card payments if you experience a covered life event.</li>
+        <li><strong>Business Credit Protection:</strong> Protection for business credit products.</li>
+      </ul>
+
+      <strong>TD Travel Insurance Plans:</strong>
+      <ul>
+        <li><strong>Single Trip Plan:</strong> Travel medical coverage for a single trip outside your home province/territory or Canada.</li>
+        <li><strong>Annual Trip Plan:</strong> Coverage for multiple trips in a year — ideal for frequent travellers.</li>
+        <li><strong>Trip Cancellation &amp; Trip Interruption Insurance:</strong> Covers prepaid, non-refundable trip costs if you need to cancel before departure or interrupt a trip already underway due to a covered reason.</li>
+        <li><strong>Top-up or Extension:</strong> Extend or top up existing travel medical insurance coverage.</li>
+      </ul>
+
+      <strong>Filing a Claim:</strong>
+      <ul>
+        <li>TD Protection Plans claims: Contact TD or visit td.com/ca/en/personal-banking/products/insurance/credit-protection/claims.</li>
+        <li>Travel Insurance claims: File through the online claims portal at globalexcel.com/td, or check the status of a submitted claim.</li>
+      </ul>
+
+      <strong>Important:</strong> All insurance coverages are subject to eligibility conditions, limitations, and exclusions, including pre-existing medical condition exclusions. Review the Certificate of Insurance for full details.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/products/insurance</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — WAYS TO BANK (APP, EASYWEB, PAYMENTS, TRANSFERS)
+  // Source: td.com/ca/en/personal-banking (navigation + solutions)
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['td app','easyweb','online banking','mobile banking','ways to bank','etransfer','interac e-transfer','apple pay','google pay','ways to pay','international money transfer','td global transfer','branch atm','phone banking','easyline','cross-border banking','foreign exchange','currency converter','bill payment online','myspend','digital banking','send money','wire transfer','digital wallet'],
+    policy: 'Ways to Bank with TD',
+    answer: `TD provides multiple convenient ways to access and manage your banking.
+
+      <strong>Digital Banking:</strong>
+      <ul>
+        <li><strong>TD App:</strong> Free mobile app for iOS and Android. Manage accounts, pay bills, transfer funds, deposit cheques (TD Mobile Deposit), monitor spending with TD MySpend, check credit scores (TransUnion CreditView®), lock/unlock your credit card, and more. Standard wireless carrier data rates may apply.</li>
+        <li><strong>EasyWeb (Online Banking):</strong> Full-featured online banking at easyweb.td.com. View accounts, pay bills, transfer funds, manage investments, and more. Register at td.com. The TD Online and Mobile Security Guarantee covers 100% reimbursement for unauthorized transactions where security responsibilities are met.</li>
+        <li><strong>WebBroker:</strong> TD's online investing platform at webbroker.td.com for self-directed investing. Separate trading password for added security.</li>
+      </ul>
+
+      <strong>Ways to Pay:</strong>
+      <ul>
+        <li><strong>TD Access Card (Visa Debit):</strong> Use your TD debit card anywhere Visa is accepted in Canada and internationally, at ATMs, in-store, and online.</li>
+        <li><strong>Digital Wallets:</strong> Add your TD debit or credit card to Apple Pay, Google Pay, Samsung Pay, or other compatible digital wallets.</li>
+        <li><strong>Contactless Payments:</strong> Tap your TD Access Card or credit card at eligible merchants.</li>
+      </ul>
+
+      <strong>Ways to Send Money:</strong>
+      <ul>
+        <li><strong>Interac e-Transfer®:</strong> Send money securely to anyone with a Canadian bank account and email address or mobile number. Free on most TD chequing accounts.</li>
+        <li><strong>TD Global Transfer:</strong> Send money internationally from your TD Canadian bank account. Available through EasyWeb and the TD App.</li>
+        <li><strong>Pre-Authorized Debits:</strong> Set up automatic recurring payments from your account.</li>
+        <li><strong>Bill Payments:</strong> Pay bills online through EasyWeb or the TD App, or set up automated bill payments.</li>
+      </ul>
+
+      <strong>Branch, Phone & ATM:</strong>
+      <ul>
+        <li><strong>Branches:</strong> Full-service TD Canada Trust branches across Canada. Book an appointment at td.com/ca/en/personal-banking/book-appointment.</li>
+        <li><strong>TD EasyLine (Phone Banking):</strong> 24/7 automated phone banking. Representatives available during business hours. Call 1-866-222-3456 for borrowing; 1-888-663-3279 for accounts.</li>
+        <li><strong>Green Machine ATMs:</strong> TD ATMs across Canada. No TD ATM fee at any TD ATM in Canada for TD Unlimited Chequing and All-Inclusive Banking Plan customers.</li>
+      </ul>
+
+      <strong>Cross-Border & Foreign Exchange:</strong>
+      <ul>
+        <li><strong>Cross-Border Banking:</strong> TD offers banking solutions for customers who bank in both Canada and the U.S., including U.S. Dollar accounts.</li>
+        <li><strong>Foreign Exchange Services:</strong> Currency conversion available online (TD Currency Converter) and in branches.</li>
+        <li><strong>U.S. Dollar Accounts:</strong> TD U.S. Daily Interest Chequing Account and Borderless Plan for frequent U.S. travellers.</li>
+      </ul>
+
+      <strong>TD MySpend:</strong> A budgeting and spending tracker built into the TD App. Shows real-time spending by category and helps you stay on budget. Free to use with any TD chequing account.
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking · td.com/ca/en/personal-banking/solutions/ways-to-bank</span>`
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PERSONAL BANKING — SPECIAL CUSTOMER SEGMENTS
+  // Source: td.com/ca/en/personal-banking (navigation)
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    keywords: ['new to canada','newcomer','newcomer banking','newcomer package','immigration','permanent resident','temporary resident','international student','student banking','youth banking','senior banking','seniors','post grad','young adult','estate planning','estate settlement','new to chequing offer','newcomer offer','banking package'],
+    policy: 'TD Banking Solutions by Customer Segment',
+    answer: `TD offers tailored banking solutions for specific customer needs and life stages.
+
+      <strong>Newcomers to Canada:</strong>
+      <ul>
+        <li>TD has a dedicated <strong>New to Canada Banking Package</strong> — earn up to $1,890 in value when you bank with TD as a Newcomer. Conditions apply.</li>
+        <li>No monthly fee on the TD Minimum Chequing Account for Newcomers in their first year in Canada (proof of Permanent or Temporary Residency required).</li>
+        <li>Mortgages available for Newcomers to Canada.</li>
+        <li>Credit cards available without Canadian credit history for eligible Newcomers.</li>
+        <li>Resources available through the TD Newcomer Learning Centre at td.com.</li>
+        <li>TD Global Transfer available for sending money internationally.</li>
+      </ul>
+
+      <strong>Students:</strong>
+      <ul>
+        <li><strong>TD Student Chequing Account:</strong> No monthly fee with unlimited transactions for students until age 23 or with proof of full-time post-secondary enrollment. Current offer: up to $125 cash. Conditions apply.</li>
+        <li>Student credit cards available for eligible students.</li>
+        <li>Student Lines of Credit, Professional Student Lines of Credit, and Healthcare Student Lines of Credit available.</li>
+        <li>RESP (Registered Education Savings Plan) for education savings.</li>
+        <li>Student & Youth Learning Centre at td.com.</li>
+      </ul>
+
+      <strong>Youth & Parents:</strong>
+      <ul>
+        <li>Youth and Student accounts available for those under 23.</li>
+        <li>RESP savings plans to save for a child's education with government grants.</li>
+        <li>TD banking solutions for parents and teens including joint accounts.</li>
+      </ul>
+
+      <strong>Post-Graduates & Young Adults:</strong>
+      <ul>
+        <li>TD offers credit cards, borrowing products, and investing accounts suited to young professionals starting their financial journey.</li>
+        <li>TD Goal Builder tool helps young adults plan and track financial goals.</li>
+      </ul>
+
+      <strong>Seniors (60+):</strong>
+      <ul>
+        <li>No monthly fee on the TD Minimum Chequing Account for Guaranteed Income Supplement (GIS) recipients.</li>
+        <li>Seniors banking advice and resources at td.com/ca/en/personal-banking/solutions/seniors-banking.</li>
+        <li>Estate planning and settlement resources available.</li>
+      </ul>
+
+      <strong>Estate Planning & Settlement:</strong>
+      <ul>
+        <li>TD provides guidance and support for planning your own estate or settling the estate of a loved one.</li>
+        <li>Resources available at td.com/ca/en/personal-banking/advice/growing-money/how-to-plan-and-settle-an-estate.</li>
+        <li>RRIF accounts help manage registered retirement income. RDSPs protect savings for beneficiaries with disabilities.</li>
+      </ul>
+      <span class="policy-ref">REF: td.com/ca/en/personal-banking/solutions</span>`
+  }
+
+];
+
+// ══════════════════════════════════════════════════════
+// HELPER: get timestamp
+// ══════════════════════════════════════════════════════
+function getTimestamp() {
+  const now = new Date();
+  return now.toLocaleTimeString('en-CA', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ══════════════════════════════════════════════════════
+// HELPER: score query against a policy entry
+// Strategy: multi-level matching
+//   1. Exact full-phrase match in query → highest weight (×20)
+//   2. Every word in a keyword phrase found in query → high weight (×8 per phrase)
+//   3. Any single keyword word found anywhere in query → base weight (×2 per word)
+// ══════════════════════════════════════════════════════
+function scoreEntry(query, entry) {
+  const q = query.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  const qWords = new Set(q.split(/\s+/).filter(w => w.length > 1));
+  let score = 0;
+
+  for (const kw of entry.keywords) {
+    const kwClean = kw.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+
+    // Level 1: exact phrase match
+    if (q.includes(kwClean)) {
+      score += kwClean.length * 20;
+      continue;
+    }
+
+    // Level 2: all words in the keyword appear somewhere in query
+    const kwWords = kwClean.split(/\s+/).filter(w => w.length > 1);
+    if (kwWords.length > 1 && kwWords.every(w => qWords.has(w))) {
+      score += kwWords.length * 8;
+      continue;
+    }
+
+    // Level 3: any individual keyword word found in query words
+    for (const w of kwWords) {
+      if (w.length > 2 && qWords.has(w)) {
+        score += 2;
+      }
+    }
+  }
+
+  // Also scan the policy name itself for matches
+  const pName = entry.policy.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  for (const qw of qWords) {
+    if (qw.length > 3 && pName.includes(qw)) {
+      score += 3;
+    }
+  }
+
+  return score;
+}
+
+// ══════════════════════════════════════════════════════
+// CORE: find best matching policy
+// ══════════════════════════════════════════════════════
+function findAnswer(query) {
+  if (!query || query.trim().length < 2) return { found: false };
+  const scores = POLICY_KB.map(e => ({ entry: e, score: scoreEntry(query, e) }));
+  scores.sort((a, b) => b.score - a.score);
+  const best = scores[0];
+  // Require a meaningful minimum score to avoid false matches
+  if (best && best.score >= 4) {
+    return { found: true, policy: best.entry.policy, answer: best.entry.answer };
+  }
+  return { found: false };
+}
+
+// ══════════════════════════════════════════════════════
+// DOM: append a log row
+// ══════════════════════════════════════════════════════
+function appendRow(source, message, type) {
+  const area = document.getElementById('log-area');
+  const row = document.createElement('div');
+  row.className = 'log-row' + (type === 'system' ? ' is-system' : '') + (type === 'warn' ? ' is-warn' : '');
+
+  const tsCell = document.createElement('div');
+  tsCell.className = 'log-cell';
+  const ts = document.createElement('span');
+  ts.className = 'log-timestamp';
+  ts.textContent = getTimestamp();
+  tsCell.appendChild(ts);
+
+  const srcCell = document.createElement('div');
+  srcCell.className = 'log-cell';
+  const srcBadge = document.createElement('span');
+  srcBadge.className = 'log-source ' +
+    (type === 'staff' ? 'source-staff' : type === 'warn' ? 'source-warn' : 'source-system');
+  srcBadge.textContent = source;
+  srcCell.appendChild(srcBadge);
+
+  const msgCell = document.createElement('div');
+  msgCell.className = 'log-cell';
+  const msg = document.createElement('div');
+  msg.className = 'log-message' +
+    (type === 'system' ? ' system-msg' : '') + (type === 'warn' ? ' warn-msg' : '');
+  msg.innerHTML = message;
+  msgCell.appendChild(msg);
+
+  row.appendChild(tsCell);
+  row.appendChild(srcCell);
+  row.appendChild(msgCell);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════
+// DOM: append typing indicator
+// ══════════════════════════════════════════════════════
+function showTyping() {
+  const area = document.getElementById('log-area');
+  const row = document.createElement('div');
+  row.className = 'log-row is-system';
+  row.id = 'typing-row';
+
+  const tsCell = document.createElement('div');
+  tsCell.className = 'log-cell';
+  const ts = document.createElement('span');
+  ts.className = 'log-timestamp';
+  ts.textContent = getTimestamp();
+  tsCell.appendChild(ts);
+
+  const srcCell = document.createElement('div');
+  srcCell.className = 'log-cell';
+  const srcBadge = document.createElement('span');
+  srcBadge.className = 'log-source source-system';
+  srcBadge.textContent = 'SYSTEM';
+  srcCell.appendChild(srcBadge);
+
+  const msgCell = document.createElement('div');
+  msgCell.className = 'log-cell';
+  msgCell.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+
+  row.appendChild(tsCell);
+  row.appendChild(srcCell);
+  row.appendChild(msgCell);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() {
+  const tr = document.getElementById('typing-row');
+  if (tr) tr.remove();
+}
+
+// ══════════════════════════════════════════════════════
+// MAIN: handle query
+// ══════════════════════════════════════════════════════
+function sendQuery() {
+  const input = document.getElementById('query-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  appendRow('STAFF', query, 'staff');
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('send-btn').disabled = true;
+
+  showTyping();
+
+  setTimeout(() => {
+    removeTyping();
+    const result = findAnswer(query);
+    if (result.found) {
+      appendRow('SYSTEM', `<strong>[${result.policy}]</strong><br>${result.answer}`, 'system');
+    } else {
+      appendRow('⚠ SYSTEM', '⚠ <strong>Refer to a supervisor.</strong> This query could not be matched to a known TD Bank policy in this system. Please consult your direct supervisor, the HR Business Partner, or the Legal/Compliance team for guidance on this matter.', 'warn');
+    }
+    input.disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }, 650 + Math.random() * 400);
+}
+
+
+// Enter key support
+// ══════════════════════════════════════════════════════
+document.getElementById('query-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !this.disabled) sendQuery();
+});
+
+// ══════════════════════════════════════════════════════
+// Initial system message
+// ══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    appendRow('SYSTEM', 'Policy Assistant initialised. Knowledge base loaded with <strong>38 TD Bank knowledge areas</strong> — sourced directly from official TD PDFs and td.com pages. Covers internal staff policies (Code of Conduct Jan 2026, AML/ATF Mar 2026, Respectful Workplace, Health &amp; Safety, Mental Health, Benefits, Fair Pay, Modern Slavery, Privacy, Governance) and the full TD Personal Banking product range (Chequing, Savings, Credit Cards, Mortgages, Borrowing, Investing, Insurance, Ways to Bank, and customer segments). Type any question below.. Type your question below or use the Quick Topics toolbar. If this assistant cannot answer your query, it will prompt you to <strong>Refer to a supervisor</strong>.', 'system');
+  }, 300);
+});
+</script>
+</body>
+</html>
